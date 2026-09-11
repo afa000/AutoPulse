@@ -1,0 +1,74 @@
+openapi: 3.0.3
+
+info:
+  title: AutoPulse API
+  version: 0.1.0
+
+paths: {}
+
+components:
+  schemas:
+    TelemetrySample:
+      type: object
+      required:
+        - deviceId
+        - vehicleId
+        - recordedAt
+        - sequenceNumber
+        - source
+      properties:
+        deviceId:
+          type: string
+        vehicleId:
+          type: string
+        recordedAt:
+          format: date-time
+          type: string
+        sequenceNumber:
+          type: integer
+          minimum: 0
+        source:
+          type: string
+          enum:
+            - SIMULATED
+            - OBD
+        rpm:
+          type: number
+          nullable: true
+          minimum: 0
+        speedKph:
+          type: number
+          nullable: true
+          minimum: 0
+        coolantTempC:
+          type: number
+          nullable: true
+        engineLoadPct:
+          type: number
+          nullable: true
+          minimum: 0
+          maximum: 100
+        throttlePositionPct:
+          type: number
+          nullable: true
+          minimum: 0
+          maximum: 100
+        intakeTempC:
+          type: number
+          nullable: true
+        milOn:
+          type: boolean
+          nullable: true
+        mafGps:
+          type: number
+          nullable: true
+          minimum: 0
+        fuelLevelPct:
+          type: number
+          nullable: true
+          minimum: 0
+          maximum: 100
+        controlModuleVoltageV:
+          type: number
+          nullable: true
+          minimum: 0
