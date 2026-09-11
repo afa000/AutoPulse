@@ -1,0 +1,6 @@
+# Keep text files consistent across Windows, Linux, Docker, and Raspberry Pi.
+* text=auto eol=lf
+
+# Preserve native Windows line endings for command scripts.
+*.bat text eol=crlf
+*.cmd text eol=crlf
