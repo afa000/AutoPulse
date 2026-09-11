@@ -1,0 +1,19 @@
+{
+    "deviceId" : "sim-device-001",
+    "vehicleId" : "venue-2021",
+    "recordedAt" : "2026-09-10T12:30:00Z",
+    "sequenceNumber" : 1,
+    "source" : "SIMULATED",
+
+    "rpm" : 1900,
+    "speedKph" : 12,
+    "coolantTempC" : 40,
+    "engineLoadPct" : 20,
+    "throttlePositionPct" : 23,
+    "intakeTempC" : 33,
+    "milOn" : false,
+
+    "mafGps" : null,
+    "fuelLevelPct" : 56,
+    "controlModuleVoltageV" : null
+}
