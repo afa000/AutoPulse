@@ -13,6 +13,7 @@ components:
       required:
         - deviceId
         - vehicleId
+        - bootId
         - recordedAt
         - sequenceNumber
         - source
@@ -21,6 +22,9 @@ components:
           type: string
         vehicleId:
           type: string
+        bootId:
+          type: string
+          format: uuid
         recordedAt:
           format: date-time
           type: string

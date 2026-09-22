@@ -1,6 +1,7 @@
 {
     "deviceId" : "sim-device-001",
     "vehicleId" : "venue-2021",
+    "bootId" : "123e4567-e89b-12d3-a456-426614174000",
     "recordedAt" : "2026-09-10T12:30:00Z",
     "sequenceNumber" : 1,
     "source" : "SIMULATED",
