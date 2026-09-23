@@ -85,7 +85,39 @@ These choices represent the initial direction and may be refined through documen
 
 ## Getting started
 
-Setup and run instructions will be added as each part of the project is introduced. The first implementation milestone is a documented local environment in which all empty-project checks pass and required infrastructure starts with one command.
+The local PostgreSQL database runs through Docker Compose. Install and start Docker Desktop, then run the following commands from the project root in PowerShell.
+
+1. If you do not already have a `.env` file, copy the example configuration. Replace its placeholder password with a password for your local database. Keep `.env` private; it is ignored by Git.
+
+   ```powershell
+   if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+   ```
+
+2. Check the Compose configuration, then start PostgreSQL.
+
+   ```powershell
+   docker compose config -q
+   docker compose up -d
+   ```
+
+3. Check that the `db` service is running and accepts a query.
+
+   ```powershell
+   docker compose ps
+   docker compose exec db psql -U iamnetgo -d autopulse -c "SELECT 1;"
+   ```
+
+   The query should return one row containing `1`. Applications running on your computer can connect to the database at `localhost:5433` using the database name, user, and password from the Compose configuration.
+
+4. Stop the local database when you are finished.
+
+   ```powershell
+   docker compose down
+   ```
+
+The named Docker volume preserves database data between normal stops and starts. `docker compose down -v` also removes that volume and deletes the local database data, so use it only when you intend to start with an empty database.
+
+Instructions for the device agent, backend, and web application will be added as those components are built.
 
 ## License
 
