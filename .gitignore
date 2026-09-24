@@ -1,3 +1,6 @@
 # Local project blueprint; keep out of source control.
 /AUTOPULSE_PROJECT_BLUEPRINT.md
 /.env
+/device-agent/.venv/
+__pycache__/
+.pytest_cache/
