@@ -15,8 +15,10 @@ paths:
         Named telemetry events coalesce committed latest changes. Duplicates, rejected
         or rolled-back rows do not refresh state; older arrivals cannot regress latest.
         Comment heartbeats every 15 seconds are not measurements. No event IDs or
-        Last-Event-ID resume; reconnect resnapshots. Streams expire after two minutes.
-        Slow clients are disconnected; 64 global and 8 per-vehicle subscriptions maximum.
+        Last-Event-ID resume; reconnect resnapshots. Streams retire after a two-minute
+        logical lease; actual transport completion may take longer. Slow clients are
+        retired without blocking the shared coordinator. Active plus retiring transports
+        reserve capacity until their writer and cleanup return: 64 globally, 8 per vehicle.
       parameters:
         - name: vehicleId
           in: path

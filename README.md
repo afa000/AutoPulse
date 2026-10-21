@@ -293,14 +293,17 @@ are `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` in `web
 `.github/workflows/verify.yml` prepares the same checks on Docker-capable Ubuntu
 runners with declared dependencies and no developer `.env` or database. Its
 Python matrix includes the minimum 3.12 and 3.14 because clock parsing differed
-in the latter during review. Java uses 21 and the Maven wrapper. The local
-workflow YAML/structure and PowerShell syntax are checked, but no successful
-hosted run is claimed until its results are observed. Python 3.12 compatibility
-is also checked in a separate ignored `device-agent/.venv312` environment when
-available; verification results are recorded separately from workflow configuration.
+in the latter during review. Java uses 21 and the Maven wrapper. The workflow
+YAML/structure and PowerShell syntax are checked locally.
+On 2026-10-21, the [first hosted verification run](https://github.com/afa000/AutoPulse/actions/runs/39549809554)
+passed all four jobs: Python 3.12 and 3.14 (89 tests each), Java/PostgreSQL
+(26 tests plus the replay demo), and frontend type/lint/unit/build checks plus
+the integrated real-browser check. Hosted Python 3.12 used CPython 3.12.15 on Ubuntu.
+Local Windows checks also passed all 89 tests on Python 3.12.10 and 3.14.3;
+the separate compatibility environment `device-agent/.venv312` remains ignored.
 The web CI job uses the Node version file, lockfile-based `npm ci`, explicit
 Chromium/system dependency installation and a disposable Java/PostgreSQL browser
-test. No push or external integration was performed. Action setup follows the
+test. Action setup follows the
 [official Python](https://github.com/actions/setup-python),
 [Java](https://github.com/actions/setup-java) and
 [checkout](https://github.com/actions/checkout) documentation.
@@ -334,8 +337,8 @@ assertions independently inspect the disposable database. Expected evidence:
 This demonstration passed locally on 2026-10-20 using Python 3.14 and Java 21.
 Testcontainers, the Java server, the Python child and the fault proxy are cleaned
 up; temporary captures are discarded. The normal development database retained
-its four existing rows. CI also targets this opt-in demonstration with Python
-3.12, but its hosted execution is still unverified.
+its four existing rows. The demonstration was rerun successfully with local
+Python 3.12.10 on 2026-10-21 and with hosted Python 3.12 in the linked CI run.
 
 ## Isolated browser and live-commute demonstration
 
@@ -376,7 +379,9 @@ Evidence is printed as `DASHBOARD_BROWSER_EVIDENCE`, `LIVE_COMMUTE_EVIDENCE` and
 Screenshots/traces/captures are under ignored `web/test-results/`. The smoke test
 stops its own Vite/browser/Python/proxy processes and disposes only test databases;
 the normal Compose database is not cleared or used. No deployment/authentication
-or durable event replay is provided. Hosted CI is configured, not observed passing.
+or durable event replay is provided. The linked hosted CI run passed the quick
+browser scenario. Both browser flows, including the optional human-paced commute,
+also passed locally with Python 3.12.10; the human-paced flow is not a default CI gate.
 
 ## License
 

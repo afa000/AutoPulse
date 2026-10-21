@@ -40,15 +40,13 @@ bounds active plus retiring resources under churn; saturation returns 503 rather
 than admitting an unbounded collection of stuck transports.
 Streams retire after two minutes (native EventSource reconnects once the actual
 transport ends). This is a logical lease, not a guaranteed socket-close deadline.
-Heartbeats use
-the shared coordinator, not one scheduled task per client. Transport writes
+Heartbeats use the shared coordinator, not one scheduled task per client. Transport writes
 never execute on ingestion or database-transaction threads. Saturation closes
 clients and requires resnapshot; this is bounded best-effort local fan-out, not
 production backpressure. Servlet/socket termination may depend on the container;
 both pools remain bounded even during blocked sockets, and a blocked completion
 does not prevent other vehicles' snapshots, heartbeats or lease retirement.
-Database faults
-close affected streams rather than keep claiming a healthy live stream.
+Database faults retire affected streams rather than keep claiming a healthy live stream.
 
 The local Vite proxy propagates upstream response termination to the browser and
 destroys upstream request/response objects when downstream closes. MVC response
