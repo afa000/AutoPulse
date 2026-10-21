@@ -4,10 +4,183 @@ info:
   title: AutoPulse API
   version: 0.1.0
 
-paths: {}
+paths:
+  /api/v1/vehicles/{vehicleId}/live:
+    get:
+      operationId: liveTelemetry
+      summary: Subscribe to committed authoritative current telemetry
+      description: >-
+        Single-instance current-state stream, not an event log. Initial/reconnect
+        telemetry event is LatestTelemetry; empty event is LiveEmpty and stays open.
+        Named telemetry events coalesce committed latest changes. Duplicates, rejected
+        or rolled-back rows do not refresh state; older arrivals cannot regress latest.
+        Comment heartbeats every 15 seconds are not measurements. No event IDs or
+        Last-Event-ID resume; reconnect resnapshots. Streams expire after two minutes.
+        Slow clients are disconnected; 64 global and 8 per-vehicle subscriptions maximum.
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+          schema: {type: string, minLength: 1}
+      responses:
+        '200':
+          description: SSE framing; telemetry and empty data are JSON, comments are keepalives.
+          content:
+            text/event-stream:
+              schema: {type: string}
+              example: "event: empty\ndata: {\"vehicleId\":\"empty-vehicle\"}\n\n"
+        '404':
+          description: Unknown vehicle, resolved before stream headers.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ApiError'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /api/v1/device/telemetry/batches:
+    post:
+      operationId: ingestTelemetryBatch
+      summary: Independently validate and persist up to 100 readings
+      description: >-
+        Maximum UTF-8 request size is 262144 bytes. A valid envelope receives HTTP 200
+        with one indexed result per item, including invalid items. Exact resends are
+        duplicates; changed content under the same identity is rejected as a conflict.
+        Systemic database failures return 503 and roll back the batch; retry its unchanged items.
+      x-max-request-bytes: 262144
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/TelemetryBatch'}
+      responses:
+        '200':
+          description: Counts match indexed results and sum to the submitted item count.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BatchResult'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '413': {$ref: '#/components/responses/TooLarge'}
+        '415': {$ref: '#/components/responses/UnsupportedMediaType'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /api/v1/vehicles/{vehicleId}/telemetry/latest:
+    get:
+      operationId: latestTelemetry
+      summary: Get the newest accepted measurement
+      description: >-
+        Orders by measurement time, then internal device UUID, boot UUID, and sequence
+        number (all descending). Receipt time never makes delayed data newer.
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+          schema: {type: string, minLength: 1}
+      responses:
+        '200':
+          description: Latest reading and its original server receipt time.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LatestTelemetry'}
+        '204': {description: Vehicle exists but has no accepted readings.}
+        '404':
+          description: Unknown public vehicle identifier (UNKNOWN_VEHICLE).
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ApiError'}
+        '503': {$ref: '#/components/responses/Unavailable'}
 
 components:
+  responses:
+    BadRequest:
+      description: Malformed JSON or invalid envelope (INVALID_REQUEST). No items processed.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
+    TooLarge:
+      description: Request exceeds 262144 bytes (REQUEST_TOO_LARGE). No items processed.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
+    UnsupportedMediaType:
+      description: Content-Type must be application/json (UNSUPPORTED_MEDIA_TYPE).
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
+    Unavailable:
+      description: Retriable database/system failure (SERVICE_UNAVAILABLE). No success acknowledgment.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
   schemas:
+    LiveEmpty:
+      type: object
+      required: [vehicleId]
+      additionalProperties: false
+      properties:
+        vehicleId: {type: string, minLength: 1}
+    TelemetryBatch:
+      type: object
+      additionalProperties: false
+      required: [readings]
+      properties:
+        readings:
+          type: array
+          minItems: 1
+          maxItems: 100
+          description: Each item is independently checked against TelemetrySample; invalid items receive rejected results.
+          items: {}
+    FieldError:
+      type: object
+      required: [field, message]
+      properties:
+        field: {type: string}
+        message: {type: string}
+    ItemResult:
+      oneOf:
+        - type: object
+          required: [index, status]
+          properties:
+            index: {type: integer, minimum: 0}
+            status: {type: string, enum: [accepted, duplicate]}
+        - type: object
+          required: [index, status, code, errors]
+          properties:
+            index: {type: integer, minimum: 0}
+            status: {type: string, enum: [rejected]}
+            code:
+              type: string
+              enum: [INVALID_READING, UNKNOWN_DEVICE, UNKNOWN_VEHICLE, DEVICE_VEHICLE_MISMATCH, IDENTITY_CONFLICT]
+            errors:
+              type: array
+              minItems: 1
+              items: {$ref: '#/components/schemas/FieldError'}
+    BatchResult:
+      type: object
+      required: [accepted, duplicate, rejected, results, correlationId]
+      description: Counts equal the number of corresponding statuses; results retain original item indexes.
+      properties:
+        accepted: {type: integer, minimum: 0}
+        duplicate: {type: integer, minimum: 0}
+        rejected: {type: integer, minimum: 0}
+        correlationId: {type: string, format: uuid}
+        results:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items: {$ref: '#/components/schemas/ItemResult'}
+    ApiError:
+      type: object
+      required: [code, message, correlationId]
+      properties:
+        code: {type: string}
+        message: {type: string}
+        correlationId: {type: string, format: uuid}
+        fieldErrors:
+          type: array
+          items: {$ref: '#/components/schemas/FieldError'}
+    LatestTelemetry:
+      type: object
+      required: [reading, receivedAt]
+      properties:
+        reading: {$ref: '#/components/schemas/TelemetrySample'}
+        receivedAt: {type: string, format: date-time}
     TelemetrySample:
       type: object
       required:
@@ -20,14 +193,22 @@ components:
       properties:
         deviceId:
           type: string
+          minLength: 1
+          pattern: '\S'
+          description: Must contain at least one non-whitespace character.
         vehicleId:
           type: string
+          minLength: 1
+          pattern: '\S'
+          description: Must contain at least one non-whitespace character.
         bootId:
           type: string
           format: uuid
         recordedAt:
           format: date-time
           type: string
+          pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}[Tt]([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\.[0-9]{1,6})?([Zz]|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$'
+          description: RFC 3339 timestamp, at most six fractional digits, UTC-representable in years 0001-9999. Offsets through 23:59 are accepted. Unsupported precision is rejected, never rounded; normalized to UTC.
         sequenceNumber:
           type: integer
           minimum: 0

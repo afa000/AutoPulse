@@ -1,7 +1,15 @@
 # Local project blueprint; keep out of source control.
 /AUTOPULSE_PROJECT_BLUEPRINT.md
+/AUTOPULSE_LEARNING_LOG.md
 /.env
 /device-agent/.venv/
+/device-agent/.venv312/
 __pycache__/
 .pytest_cache/
 *.egg-info/
+/web/node_modules/
+/web/dist/
+/web/test-results/
+/web/playwright-report/
+/web/.env*
+!/web/.env.example

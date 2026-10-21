@@ -1,0 +1,13 @@
+[
+  {"field": "recordedAt", "value": "2026-09-10T12:30:00.123456Z"},
+  {"field": "recordedAt", "value": "2026-09-10t08:30:00.000001-04:00"},
+  {"field": "recordedAt", "value": "2026-09-10t12:30:00z"},
+  {"field": "recordedAt", "value": "2026-09-10T12:30:00+23:59"},
+  {"field": "recordedAt", "value": "2026-09-10T12:30:00-23:59"},
+  {"field": "rpm", "value": 1900.0000000000000001},
+  {"field": "engineLoadPct", "value": 100},
+  {"field": "rpm", "value": 0},
+  {"field": "milOn", "value": false},
+  {"field": "mafGps", "value": null},
+  {"field": "coolantTempC", "value": -20}
+]

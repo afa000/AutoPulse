@@ -1,0 +1,5 @@
+[
+  {"now":"2026-10-20T12:00:05Z","recordedAt":"2026-10-20T12:00:00Z","receivedAt":"2026-10-20T12:00:04Z","expected":"fresh"},
+  {"now":"2026-10-20T12:00:07Z","recordedAt":"2026-10-20T12:00:00Z","receivedAt":"2026-10-20T12:00:06Z","expected":"stale"},
+  {"now":"2026-10-20T12:00:00Z","recordedAt":"2026-10-20T12:01:00Z","receivedAt":"2026-10-20T12:00:00Z","expected":"clock-warning"}
+]

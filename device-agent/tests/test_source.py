@@ -9,4 +9,4 @@ def test_example_source_is_simulated():
     example_path = repo_root / "contracts" / "examples" / "telemetry-sample.json"
     data = json.loads(example_path.read_text(encoding="utf-8"))
     assert SampleSource(data["source"]) is SampleSource.SIMULATED
-    
+

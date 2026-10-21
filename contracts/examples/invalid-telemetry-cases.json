@@ -1,0 +1,61 @@
+[
+  {"field": "recordedAt", "value": "2026-09-10T12:30:00.123456789Z"},
+  {"field": "recordedAt", "value": "2026-09-10T12:30:00.0000002Z"},
+  {"field": "rpm", "value": -1e-400},
+  {"field": "engineLoadPct", "value": 100.0000000000000001},
+  {"field": "coolantTempC", "value": 1e400, "semanticOnly": true},
+  {"field": "mafGps", "value": 1e-400, "semanticOnly": true},
+  {"field": "recordedAt", "value": "2026-09-10T24:00:00Z"},
+  {"field": "recordedAt", "value": "2026-13-10T12:30:00Z"},
+  {"field": "recordedAt", "value": "2026-09-10T12:30:00+00:60"},
+  {"field": "recordedAt", "value": "2026-09-10T12:30:00+24:00"},
+  {"field": "recordedAt", "value": "2026-09-10T12:30:00-01:99"},
+  {
+    "field": "recordedAt",
+    "value": "20260910T123000+0000"
+  },
+  {
+    "field": "recordedAt",
+    "value": "2026-09-10X12:30:00+00:00"
+  },
+  {
+    "field": "bootId",
+    "value": "123e4567e89b12d3a456426614174000"
+  },
+  {
+    "field": "recordedAt",
+    "value": "0001-01-01T00:00:00+01:00", "semanticOnly": true
+  },
+  {
+    "field": "recordedAt",
+    "value": "9999-12-31T23:59:59-01:00", "semanticOnly": true
+  },
+  {
+    "field": "sequenceNumber",
+    "value": true
+  },
+  {
+    "field": "sequenceNumber",
+    "value": -1
+  },
+  {
+    "field": "rpm",
+    "value": true
+  },
+  {
+    "field": "engineLoadPct",
+    "value": 101
+  },
+  {
+    "field": "milOn",
+    "value": 0
+  },
+  {
+    "field": "deviceId",
+    "value": "   "
+  },
+  {
+    "field": "source",
+    "value": "UNKNOWN"
+  }
+]

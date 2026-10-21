@@ -6,10 +6,10 @@ build-backend = "setuptools.build_meta"
 name = "autopulse-agent"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = ["simplejson>=3.20,<4"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "openapi-spec-validator>=0.9,<0.10", "openapi-schema-validator>=0.9,<0.10", "PyYAML>=6,<7"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
