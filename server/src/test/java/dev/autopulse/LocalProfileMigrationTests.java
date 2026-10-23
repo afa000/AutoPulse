@@ -15,7 +15,7 @@ class LocalProfileMigrationTests {
     @Autowired JdbcTemplate jdbc;
 
     @Test void realLocalStartupSeedsAfterLatestMigrationWithoutApplyingV900() {
-        assertThat(jdbc.queryForObject("select max(version::int) from flyway_schema_history", Integer.class)).isEqualTo(931);
+        assertThat(jdbc.queryForObject("select max(version::int) from flyway_schema_history", Integer.class)).isEqualTo(933);
         assertThat(jdbc.queryForObject("select count(*) from flyway_schema_history where version='900'", Integer.class)).isZero();
         assertThat(jdbc.queryForObject("select count(*) from vehicle", Integer.class)).isEqualTo(2);
         assertThat(jdbc.queryForObject("select count(*) from device", Integer.class)).isEqualTo(1);

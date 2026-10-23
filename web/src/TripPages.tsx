@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useState } from 'react'
 import { PageFrame } from './PageFrame'
 import { completionLabel, coverage, displayNumber, duration, estimatedDistance, parseTrip, parseTripPage, type Trip } from './trips'
 import { useTripRequest } from './useTripRequest'
+import { displayRatio, exactText } from './analytics'
 const TripCharts = lazy(() => import('./TripCharts'))
 
 const endpoint = (vehicle: string) => `/api/v1/vehicles/${encodeURIComponent(vehicle)}/trips`
@@ -91,7 +92,12 @@ export function TripDetail({ vehicle, id }: { vehicle: string; id: string }) {
         <p className="table-scroll-hint">On narrow screens, scroll the table horizontally to see every column.</p>
         <div className="table-scroll" tabIndex={0} role="region" aria-label="Sensor statistics table, horizontally scrollable"><table><caption>Sensor statistics and non-null sample coverage</caption><thead><tr><th scope="col">Sensor</th><th scope="col">Mean</th><th scope="col">Minimum</th><th scope="col">Maximum</th><th scope="col">Samples present</th></tr></thead>
           <tbody>{summaryMetrics.map(([name, label, unit]) => { const metric = trip.metrics[name]; return <tr key={name}><th scope="row">{label} ({unit})</th>
-            <td>{metric.sum === null ? 'Unavailable' : displayNumber(metric.sum / metric.count)}</td><td>{metric.min === null ? 'Unavailable' : displayNumber(metric.min)}</td><td>{metric.max === null ? 'Unavailable' : displayNumber(metric.max)}</td><td>{metric.count} / {trip.sampleCount}</td></tr> })}</tbody></table></div>
+            <td>{metric.sum === null ? 'Unavailable' : displayRatio(metric.sum, metric.count) === null ? 'Outside display range (exact total retained)' : displayNumber(displayRatio(metric.sum, metric.count)!)}</td><td>{metric.min === null ? 'Unavailable' : displayNumber(metric.min)}</td><td>{metric.max === null ? 'Unavailable' : displayNumber(metric.max)}</td><td>{metric.count} / {trip.sampleCount}</td></tr> })}</tbody></table></div>
+        <details><summary>Exact analytical evidence (unrounded totals and distance ratio)</summary>
+          <p>Decimal tokens from the API; means and charts are display approximations, not replay data.</p>
+          <dl>{Object.entries(trip.metrics).map(([name, metric]) => <div key={name}><dt>{name} sum / non-null count</dt><dd style={{ overflowWrap: 'anywhere' }}>{metric.sum === null ? 'null (no observations)' : `${exactText(metric.sum)} / ${metric.count}`}</dd></div>)}
+            <div><dt>Estimated kilometres numerator / denominator</dt><dd style={{ overflowWrap: 'anywhere' }}>{trip.distance.kilometres ? `${exactText(trip.distance.kilometres.numerator)} / ${exactText(trip.distance.kilometres.denominator)}` : 'Unavailable'}</dd></div></dl>
+        </details>
       </section>
       <section className="quality" aria-label="Quality and uncertainty"><h2>Quality and uncertainty</h2>
         {trip.quality.length > 0 ? <><p>Reported processing flags (not diagnostic alerts):</p><ul>{trip.quality.map(flag => <li key={flag}>{flag}</li>)}</ul></> : <p>No additional quality flags were reported. This does not certify complete capture or uninterrupted sensor coverage.</p>}

@@ -6,6 +6,9 @@ from uuid import UUID, uuid4
 from autopulse_agent.models.source import SampleSource
 from autopulse_agent.models.telemetry import TelemetrySample
 from .commute import CommuteConfig
+from .diagnostics import SCENARIOS, diagnostic_frame, synthetic_temperature_at
+from .protocol import ReadOperation, SourceCapabilities, require_read_operation
+from autopulse_agent.models.diagnostics import CodeCategory, DiagnosticSnapshot
 
 
 _PHASE_READINGS = (
@@ -62,13 +65,19 @@ class SimulatedTelemetrySource:
         *,
         scenario: str = "snapshots",
         config: CommuteConfig | None = None,
+        diagnostic_scenario: str | None = None,
     ) -> None:
         if not isinstance(start_at, datetime) or start_at.utcoffset() is None:
             raise ValueError("start_at must include time-zone information")
         if not isinstance(interval, timedelta) or interval <= timedelta(0):
             raise ValueError("interval must be a positive timedelta")
-        if scenario not in ("snapshots", "normal-commute"):
+        if scenario not in ("snapshots", "normal-commute", "synthetic-temperature"):
             raise ValueError("unknown scenario")
+        if diagnostic_scenario is not None and diagnostic_scenario not in SCENARIOS:
+            raise ValueError("unknown diagnostic scenario")
+        if scenario == "synthetic-temperature" and interval != timedelta(seconds=2):
+            raise ValueError("synthetic temperature fixture requires its fixed 2-second measurement interval")
+        self.diagnostic_scenario = diagnostic_scenario
         self.scenario = scenario
         self.config = config if config is not None else CommuteConfig()
         if scenario == "normal-commute" and interval > min(self.config.durations):
@@ -84,16 +93,35 @@ class SimulatedTelemetrySource:
         self.interval = interval
         self._connected = False
         self._next_index = 0
+        self._next_diagnostic_index = 0
 
     def connect(self) -> None:
         self._connected = True
 
     def capabilities(self) -> set[str]:
+        require_read_operation(ReadOperation.CAPABILITIES)
         if not self._connected:
             raise RuntimeError("simulated source is not connected")
-        return set(_SUPPORTED_FIELDS)
+        return set(("rpm", "speed_kph", "coolant_temp_c", "mil_on")) if self.scenario == "synthetic-temperature" else set(_SUPPORTED_FIELDS)
+
+    def source_capabilities(self) -> SourceCapabilities:
+        fields = frozenset(self.capabilities())
+        supported = self.diagnostic_scenario is not None
+        return SourceCapabilities(SampleSource.SIMULATED, fields, supported,
+                                  ("SIMULATOR",) if supported else (),
+                                  frozenset(CodeCategory) if supported else frozenset())
+
+    def read_diagnostics(self) -> DiagnosticSnapshot:
+        require_read_operation(ReadOperation.DIAGNOSTICS)
+        if not self._connected:
+            raise RuntimeError("simulated source is not connected")
+        snapshot = diagnostic_frame(self.device_id, self.vehicle_id, self.boot_id,
+                                    self.start_at, self._next_diagnostic_index, self.diagnostic_scenario)
+        self._next_diagnostic_index += 1
+        return snapshot
 
     def read(self) -> TelemetrySample:
+        require_read_operation(ReadOperation.TELEMETRY)
         if not self._connected:
             raise RuntimeError("simulated source is not connected")
         elapsed = self.interval * self._next_index
@@ -109,7 +137,8 @@ class SimulatedTelemetrySource:
             recorded_at=self.start_at + self.interval * index,
             sequence_number=index,
             source=SampleSource.SIMULATED,
-            **(_PHASE_READINGS[index] if self.scenario == "snapshots" else self.config.readings_at(elapsed)),
+            **(_PHASE_READINGS[index] if self.scenario == "snapshots" else
+               synthetic_temperature_at(elapsed) if self.scenario == "synthetic-temperature" else self.config.readings_at(elapsed)),
         )
         self._next_index += 1
         return sample

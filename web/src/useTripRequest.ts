@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { isObject } from './telemetry'
+import { parseAnalyticsJson } from './analytics'
 
 type State<T> = { request: string; attempt: number; data: T | null; processing: string; generation: string | null; loadedAt: string | null; busy: boolean; error: string | null }
 export class RequestFailure extends Error {}
@@ -25,7 +26,7 @@ export function useTripRequest<T>(url: string, parse: (value: unknown) => T | nu
     async function load() {
       try {
         const response = await fetch(url, { signal: controller.signal, cache: 'no-store' })
-        const raw: unknown = await response.json()
+        const raw = parseAnalyticsJson(await response.text())
         if (!response.ok) throw new RequestFailure(errorMessage(response.status, isObject(raw) ? raw.code : null, context))
         const data = parse(raw)
         if (data === null) throw new RequestFailure(`Unreadable ${context === 'history' ? 'history' : 'trip'} response. Last-known data has not been replaced.`)

@@ -57,7 +57,7 @@ scripts/       Repeatable development workflows
 
 ## Current status
 
-The trips/history milestone is complete locally, including a real simulator-to-browser trip, crash recovery and retention demonstration. Python offers snapshots and a complete synthetic commute; Spring Boot validates and persists bounded batches in PostgreSQL; React receives committed latest state over SSE without refresh. Multi-batch capture/replay, bounded stream resources, freshness states, persisted trips, historical charts and tested opt-in retention are included. CI gates are updated, but a new hosted run has not been observed. The broader MVP remains future work.
+The trips/history milestone is complete locally, including a real simulator-to-browser trip, crash recovery and retention demonstration. Python offers snapshots and a complete synthetic commute; Spring Boot validates and persists bounded batches in PostgreSQL; React receives committed latest state over SSE without refresh. Multi-batch capture/replay, bounded stream resources, freshness states, persisted trips, historical charts and tested opt-in retention are included. Diagnostics checkpoint 2 adds durable snapshot acceptance, bounded event processing and a small verified generic-code catalog. Checkpoint 3 adds verified local backend maintenance history and evidence-backed recommendations, including the live-stream cleanup repair (details below). Checkpoint 4 adds Diagnostics/Maintenance views, manual history/corrections and advisory evidence/actions. Checkpoint 5 adds the actual Python diagnostic/maintenance simulator, crash/replay and browser demonstration described below; the broader MVP remains incomplete. Exact executed verification is in the verification record. No new hosted run is claimed for this uncommitted work.
 
 No vehicle hardware is required during the simulator-based development phases.
 
@@ -149,6 +149,274 @@ scenarios; 59 frontend tests plus typecheck/lint/build; and 96 Python tests on
 3.12. A separate Python 3.14 run also passed all 96 tests. Browser accessibility
 checks and visual review cover desktop and narrow layouts. The owner development
 database was not accessed, and nothing was committed or pushed.
+
+## Diagnostics/maintenance checkpoint 0: numeric display boundary
+
+Trip and history requests now preserve exact analytical JSON number tokens before
+browser conversion. Large valid totals are divided with decimal arithmetic before
+display, so a finite mean or distance is not lost through an overflowing total.
+Unrounded evidence is available in expandable trip/history sections. Scientific
+notation and explicitly scaled chart axes keep extreme synthetic values readable;
+genuinely unrepresentable values are labeled, not clipped or confused with missing
+observations. Wire contracts, stored telemetry, replay identities and timestamps
+are unchanged. See [ADR 0028](docs/adr/0028-lossless-analytical-browser-boundary.md).
+
+The optional `-Browser` verification also includes `NumericAnalyticsDemo`, which
+uses only disposable data for real HTTP/browser and retained/owned aggregate checks.
+This checkpoint does not implement diagnostics or maintenance features. Final
+verification and review status are recorded in the private learning log.
+
+## Maintenance checkpoint 3: complete locally, owner approved
+
+Checkpoint 3 now has local backend code for revisioned service profiles, manual
+odometer/oil-filter records and three pinned advisory rules (oil interval,
+confirmed-code observations and explicitly synthetic temperature). See
+[ADR 0031](docs/adr/0031-maintenance-records-and-evidence-backed-advisories.md) and
+[OpenAPI](contracts/openapi.yaml) for retry identity, corrections, uncertainty,
+workflow meanings and source provenance. Docker is now healthy; focused disposable
+PostgreSQL/HTTP, migration and rule checks pass, including the actual HTTP schema
+bridge. The final full workflow passes: 458 backend tests, 154 tests on each supported
+Python version, frontend typecheck/lint/78 tests/build, and three Java demos covering
+seven browser scenarios. The owner-authorized live-stream cleanup repair passes
+deterministic ownership/accounting regressions and the real trip demo with zero
+remaining reservations. The earlier failed run remains documented in the
+[verification record](docs/milestone-verification.md); no assertion was removed or
+timeout increased. The owner approved checkpoint 3 by authorizing checkpoint 4.
+Do not use an existing owner database to test this slice; V933 has been applied
+only to newly created disposable test databases.
+
+`autopulse.maintenance.processing-enabled=false` remains off. Checkpoint 4 adds
+local diagnostic, maintenance and recommendation views. There are no ECU-control actions
+or automatic service/diagnostic deletions. Normal/severe usage must be explicitly
+selected; unknown history/odometer never implies up-to-date service. The U.S. 2021
+Venue G1.6 oil rule uses a manufacturer-authored manual with provenance and oil-grade
+conditions; synthetic thermal thresholds are not Hyundai specifications.
+
+When Docker is healthy, continue with disposable tests only from `server/`:
+
+```powershell
+.\mvnw.cmd test '-Dtest=MaintenanceRuleTests,MaintenanceApiTests,MaintenanceMigrationTests,MaintenanceStartupTests'
+..\device-agent\.venv312\Scripts\python.exe ..\scripts\verify_maintenance_http.py
+```
+
+The HTTP schema bridge needs real response output from a successful test run; it
+must not be bypassed with invented examples. After focused tests pass, run the
+full regression entry point with browser checks. Current executed versus pending
+checks are in [verification notes](docs/milestone-verification.md).
+See [maintenance operations](docs/maintenance-operations.md) for retry/correction
+workflow, queue/review limits and the distinction between observations and actions.
+
+## Diagnostics and Maintenance dashboard (checkpoint 4: complete locally)
+
+Use the existing dashboard navigation: **Diagnostics** for latest capture outcomes,
+MIL, observed code cycles, definition provenance and event history; **Maintenance**
+for manual profile/service/odometer entry and correction history. Follow
+**View recommendations and actions** to inspect frozen rule evidence separately
+from current freshness and take the permitted workflow actions.
+
+Normal/severe schedule and applicability start unset, not inferred from this
+README or simulated readings. Enter actual manual odometer values, never estimated
+trip distance. A record correction requires a reason and appends a revision.
+Simulation labels stay visible on advisory/action screens; unknown definitions,
+unsupported/partial reads, stale inputs and processing backlog remain explicit.
+No ECU-clear/reset controls exist. Oil completion requires an actual matching
+service record; acknowledging/dismissing/completing other advisories is workflow,
+not proof of repair or driving safety.
+
+If a write response is lost, **Retry identical submission** reuses its saved
+request identity and exact body, including after reload in the same tab. Do not
+close/clear that tab to bypass an unconfirmed write; reconcile existing history
+first. Pending commands (including manual notes) live in tab session storage until
+resolved; this is not a durable device outbox or cross-tab recovery. Conflicts ask
+you to refresh/review before making a genuinely new change.
+
+Repeat the UI proof without owner data from `server/` (Docker Desktop required):
+
+```powershell
+.\mvnw.cmd test '-Dtest=CareBrowserDemo'
+```
+
+This creates its own PostgreSQL container, explicitly opts in only its test
+diagnostic/maintenance workers, uses the real backend/forms and removes its
+disposable infrastructure afterward. Saved application defaults stay off. The
+test covers an unknown baseline, complete empty versus partial captures, verified
+and unknown codes, manual history/correction, lost-ack retry without duplicates,
+advisory acknowledgment and matching-only oil completion. Desktop/narrow screenshots
+and accessibility checks are under ignored `web/playwright-report/care-artifacts/`;
+the browser log is ignored `server/target/care-browser.log`.
+
+Final local workflow passed October23 at17:24America/New_York:458 backend tests,
+154 tests on each supported Python version, frontend typecheck/lint/103 tests/build,
+and4 Java demos covering8 real browser scenarios. All9 new UI screenshots were
+visually reviewed and their axe checks report0 violations. Private files remain
+excluded; the owner database and saved safe defaults are untouched. Ready for
+owner review before checkpoint5 at that handoff; the owner subsequently approved
+checkpoint5. This was not authorization to publish.
+
+This checkpoint is a UI proof, not checkpoint 5's full new Python-simulator/JVM
+crash-recovery handoff. Exact local regression status is recorded in
+[verification notes](docs/milestone-verification.md). No production authentication,
+hardware validation, deployment or publication is implied.
+
+## Simulator-to-browser diagnostic/maintenance proof (checkpoint 5)
+
+From `server/`, with Docker Desktop available and the owner development database
+left stopped, run the isolated demonstration:
+
+```powershell
+.\mvnw.cmd test '-Dtest=CareMilestoneDemo' '-Dautopulse.python=C:/path/to/device-agent/.venv312/Scripts/python.exe'
+```
+
+Replace the Python path with your installed project environment. On Linux use
+`bash ./mvnw` and its Python path. The test creates a fresh PostgreSQL container;
+you do not run Compose, start the development backend, migrate owner data or change
+saved flags. It uses the actual simulator, immutable diagnostic codec/new bounded
+HTTP transport, telemetry batch sender, backend, production work processors and
+React UI. It explicitly runs bounded processing in its disposable test app, never
+enables owner-data workers, and cleans up its infrastructure afterward.
+
+The demo proves a complete-empty simulated baseline with unknown maintenance,
+lost diagnostic acknowledgment and identical retry, then commits work while
+processors are off and forcibly terminates the accepting backend JVM. A new backend
+reuses only the database/captured immutable observations, preserves original receipt
+timestamps and recovers queued work. Staged real-browser checks exercise continuing
+codes, partial/unavailable/late evidence, qualifying absence, genuine/new-boot
+recurrence, unknown definitions, synthetic temperature uncertainty/gaps/recovery,
+vehicle isolation and matching-only service completion. Manual service retry after
+an acknowledgment loss/reload does not duplicate records.
+
+Expected final evidence:13 unique diagnostic snapshots,39 category applications,
+5 event cycles with positive counts3/2/3/2/2,3 diagnostic advisory cycles,
+36 original temperature readings plus1 stale/older low control,1 thermal cycle,
+1 oil reminder and3 manual records. Thermal opens at32s, null34s stays active/unknown,
+first low68s after a gap does not recover, low70s does. Final replay returns15
+diagnostic/37 telemetry duplicates without changing stored projections/evidence/
+receipts. Inspect the [verification record](docs/milestone-verification.md) for
+actual execution status rather than treating these expectations as a test pass.
+
+Repeat all gates from the repository root with the supported Python environment:
+
+```powershell
+.\scripts\verify.ps1 -Python .\device-agent\.venv312\Scripts\python.exe -Browser
+```
+
+The browser option now includes5 Java demos, including existing trips/retention and
+large-number regressions. New screenshots are ignored under
+`web/playwright-report/care-milestone/{baseline,lifecycle}/`; logs are ignored
+`server/target/care-milestone-{baseline,lifecycle}-browser.log` and
+`server/target/care-seed-server.log`. The temporary capture is a demonstration
+artifact, **not a durable device outbox**. `scripts/demo_care.py` is a finite,
+JUnit-owned isolated-demo helper, not a general diagnostic polling CLI. The normal
+device-agent command still sends telemetry; physical diagnostic polling/hardware
+integration and durable edge buffering are separate future work.
+
+Everything remains local/simulated and informational. Synthetic thermal thresholds
+are not Hyundai specifications; workflow completion/expiration never certifies
+repair or driving safety. Manual applicability/normal/severe selection must be
+explicit; this demo does not set a schedule/profile for the owner's vehicle.
+Readiness for authentication, production deployment or hardware is not implied.
+Commit/push/publication and new hosted CI require separate owner approval after
+review. No older hosted run substitutes for the uncommitted milestone's validation.
+
+Checkpoint5 is complete **locally**, ready for owner review. The full October23
+workflow passed at17:49America/New_York:176 tests on Python3.12 and3.14,458 ordinary
+backend tests, both actualHTTP/OpenAPI gates, frontend typecheck/lint/104tests/build,
+and5 Java demos covering10 real browser scenarios. This includes the actual new
+diagnostic/maintenance simulator/JVM proof, not just the earlier trip demo.
+Seven new milestone screenshots and the existing UI captures pass accessibility
+checks and visual review. Private files remain excluded, saved safety switches
+unchanged and the development database untouched. Nothing committed or pushed;
+new hosted verification remains pending separate authorization.
+
+## Diagnostics checkpoint 2: durable history and verified definitions
+
+The backend now accepts immutable diagnostic snapshots and exposes vehicle-scoped
+event list/detail endpoints in [OpenAPI](contracts/openapi.yaml). This is a backend
+slice: the offline simulator exists, but a diagnostic sender and Diagnostics view
+are not implemented yet. Maintenance records and recommendations remain separate.
+
+- `POST /api/v1/device/diagnostic-snapshots`: one bounded snapshot, exact replay
+  returns its original receipt; conflicting identity or vehicle association rejects.
+- `GET /api/v1/vehicles/{vehicleId}/diagnostics`: default 20/max 100 events, optional
+  `category` and `observationState`, signed generation-bound paging. Restart paging
+  after PAGE_CHANGED. Pending work is explicit; an empty list is not proof of health.
+- `GET /api/v1/vehicles/{vehicleId}/diagnostics/{eventId}`: event evidence and newest
+  100 transitions, with `hasEarlierTransitions` when older history is omitted.
+
+Acceptance transactionally queues durable work. The opt-in processor performs one
+ECU/category per transaction and one page per poll, preserving event cycles,
+observation counts and transition evidence across worker reconstruction. A complete,
+fresh, newer same-scope absence can mark NOT_OBSERVED; partial/failed reads, MIL off
+and old evidence cannot. This state does not mean repaired or cleared. The tiny
+versioned generic-code catalog exposes provenance and unknown-definition fallback;
+it provides investigation context, not a component diagnosis or driving advice.
+
+Migration V932 adds independent diagnostic evidence without deleting/backfilling
+telemetry. Saved `autopulse.diagnostics.processing-enabled=false` remains disabled.
+Do not enable it or apply migrations to an existing owner database as a test.
+Work marked REVIEW needs cause investigation, not blind retries; no public repair
+or deletion control exists. See [ADR 0030](docs/adr/0030-durable-diagnostic-history-and-catalog.md)
+for freshness, clock, resource, catalog-rights and recovery limits.
+
+With Docker available, run only the disposable-database tests from `server/`:
+
+```powershell
+.\mvnw.cmd test '-Dtest=DiagnosticApiTests,DiagnosticStartupTests,DiagnosticMigrationTests'
+..\device-agent\.venv312\Scripts\python.exe ..\scripts\verify_diagnostic_http.py
+```
+
+The second command validates actual HTTP response artifacts produced by the first.
+`scripts/verify.ps1 -Python <your-python> -Browser` includes this contract bridge,
+the ordinary suites and existing live/trip/numeric browser regressions. These are
+not yet a diagnostic simulator-to-browser demonstration; that is checkpoint 5.
+
+## Diagnostics checkpoint 1: contracts and offline simulation
+
+Validated diagnostic snapshot models, typed source capabilities and deterministic
+offline fixtures are available. A snapshot records a poll; a later diagnostic event
+will track a code's observations; a recommendation is a separate advisory workflow.
+Failed/partial/unsupported reads are not successful empty results. Pending,
+confirmed and permanent categories remain distinct; a permanent code not observed
+in a complete read is not a claim that it was cleared or repaired.
+
+See [ADR 0029](docs/adr/0029-diagnostic-snapshots-and-read-only-sources.md) and the
+shared diagnostic/temperature fixtures for exact limits, clocks, expected counts
+and the minimal logical read-only allowlist. At checkpoint 1, diagnostic API routes
+were planned only; checkpoint 2 below implements persistence, event processing and
+the catalog. There is still no diagnostic sender, recommendation engine, service
+workflow or physical adapter in this slice.
+Temperature values/thresholds are synthetic, not verified Hyundai specifications.
+
+The existing CLI defaults remain unchanged. To inspect the new finite diagnostic
+story offline from an installed Python agent environment:
+
+```python
+from datetime import datetime, timezone
+from uuid import UUID
+from autopulse_agent.models.diagnostics import snapshot_to_json
+from autopulse_agent.sources.simulated import SimulatedTelemetrySource
+
+source = SimulatedTelemetrySource(
+    "sim-device-001", "venue-2021", datetime(2026, 10, 22, 12, tzinfo=timezone.utc),
+    boot_id=UUID("123e4567-e89b-42d3-a456-426614174000"),
+    diagnostic_scenario="lifecycle",
+)
+source.connect()
+try:
+    while True:
+        print(snapshot_to_json(source.read_diagnostics()))
+except StopIteration:
+    pass
+finally:
+    source.close()
+```
+
+Other explicit diagnostic stories are `baseline` and `restart`; omitting the
+diagnostic scenario reports UNSUPPORTED, not a fabricated empty success. Diagnostic
+and telemetry counters are independent. The separate `synthetic-temperature`
+telemetry scenario uses its fixed two-second measurement interval and is currently
+selected through the Python source constructor, not a new CLI option. These offline
+fixtures do not satisfy durable edge buffering or demonstrate hardware safety.
 
 ## Technology direction
 
@@ -341,6 +609,10 @@ Transport completion runs on two separate cleanup workers with a bounded queue,
 never on the shared coordinator. Active plus retiring clients retain the 64/8
 capacity reservations until their writer and cleanup finish, preventing unbounded
 resource growth under reconnect churn.
+Application retirement uses a no-flush terminal dispatch; a broken connection is
+completed by the container, not redundantly completed by another worker. Queued
+cleanup tasks retain their reservations, and shutdown drains queued writer tasks
+so their release bookkeeping runs. See the October 23 correction in ADR 0004.
 See ADR 0004 for synchronization, socket/container limitations and UI semantics.
 Closed sockets can take later writes to detect; the two-minute lease retires
 them but is not a guaranteed socket-close deadline. A blocked write/completion

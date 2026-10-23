@@ -1,0 +1,1360 @@
+{
+  "description": "Synthetic diagnostic observations. Codes are identifiers only; no verified definition or hardware support is claimed.",
+  "baseTime": "2026-10-22T12:00:00Z",
+  "bootId": "123e4567-e89b-42d3-a456-426614174000",
+  "restartBootId": "223e4567-e89b-42d3-a456-426614174000",
+  "lifecycle": [
+    {
+      "snapshotVersion": 1,
+      "deviceId": "sim-device-001",
+      "vehicleId": "venue-2021",
+      "bootId": "123e4567-e89b-42d3-a456-426614174000",
+      "diagnosticSequence": 0,
+      "capturedAt": "2026-10-22T12:00:00Z",
+      "source": "SIMULATED",
+      "ecus": [
+        {
+          "ecuId": "SIMULATOR",
+          "outcome": "COMPLETE",
+          "mil": {
+            "outcome": "COMPLETE",
+            "illuminated": false
+          },
+          "categories": [
+            {
+              "category": "PENDING",
+              "outcome": "COMPLETE",
+              "codes": []
+            },
+            {
+              "category": "CONFIRMED",
+              "outcome": "COMPLETE",
+              "codes": []
+            },
+            {
+              "category": "PERMANENT",
+              "outcome": "COMPLETE",
+              "codes": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "snapshotVersion": 1,
+      "deviceId": "sim-device-001",
+      "vehicleId": "venue-2021",
+      "bootId": "123e4567-e89b-42d3-a456-426614174000",
+      "diagnosticSequence": 1,
+      "capturedAt": "2026-10-22T12:00:02Z",
+      "source": "SIMULATED",
+      "ecus": [
+        {
+          "ecuId": "SIMULATOR",
+          "outcome": "COMPLETE",
+          "mil": {
+            "outcome": "COMPLETE",
+            "illuminated": true
+          },
+          "categories": [
+            {
+              "category": "PENDING",
+              "outcome": "COMPLETE",
+              "codes": [
+                "P0117"
+              ]
+            },
+            {
+              "category": "CONFIRMED",
+              "outcome": "COMPLETE",
+              "codes": []
+            },
+            {
+              "category": "PERMANENT",
+              "outcome": "COMPLETE",
+              "codes": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "snapshotVersion": 1,
+      "deviceId": "sim-device-001",
+      "vehicleId": "venue-2021",
+      "bootId": "123e4567-e89b-42d3-a456-426614174000",
+      "diagnosticSequence": 2,
+      "capturedAt": "2026-10-22T12:00:04Z",
+      "source": "SIMULATED",
+      "ecus": [
+        {
+          "ecuId": "SIMULATOR",
+          "outcome": "COMPLETE",
+          "mil": {
+            "outcome": "COMPLETE",
+            "illuminated": true
+          },
+          "categories": [
+            {
+              "category": "PENDING",
+              "outcome": "COMPLETE",
+              "codes": [
+                "P0117"
+              ]
+            },
+            {
+              "category": "CONFIRMED",
+              "outcome": "COMPLETE",
+              "codes": [
+                "P0117"
+              ]
+            },
+            {
+              "category": "PERMANENT",
+              "outcome": "COMPLETE",
+              "codes": [
+                "P0117"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "snapshotVersion": 1,
+      "deviceId": "sim-device-001",
+      "vehicleId": "venue-2021",
+      "bootId": "123e4567-e89b-42d3-a456-426614174000",
+      "diagnosticSequence": 3,
+      "capturedAt": "2026-10-22T12:00:06Z",
+      "source": "SIMULATED",
+      "ecus": [
+        {
+          "ecuId": "SIMULATOR",
+          "outcome": "COMPLETE",
+          "mil": {
+            "outcome": "COMPLETE",
+            "illuminated": true
+          },
+          "categories": [
+            {
+              "category": "PENDING",
+              "outcome": "COMPLETE",
+              "codes": [
+                "P0117"
+              ]
+            },
+            {
+              "category": "CONFIRMED",
+              "outcome": "COMPLETE",
+              "codes": [
+                "P0117"
+              ]
+            },
+            {
+              "category": "PERMANENT",
+              "outcome": "COMPLETE",
+              "codes": [
+                "P0117"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "snapshotVersion": 1,
+      "deviceId": "sim-device-001",
+      "vehicleId": "venue-2021",
+      "bootId": "123e4567-e89b-42d3-a456-426614174000",
+      "diagnosticSequence": 4,
+      "capturedAt": "2026-10-22T12:00:08Z",
+      "source": "SIMULATED",
+      "ecus": [
+        {
+          "ecuId": "SIMULATOR",
+          "outcome": "PARTIAL",
+          "mil": {
+            "outcome": "UNAVAILABLE",
+            "illuminated": null
+          },
+          "categories": [
+            {
+              "category": "PENDING",
+              "outcome": "UNSUPPORTED",
+              "codes": []
+            },
+            {
+              "category": "CONFIRMED",
+              "outcome": "PARTIAL",
+              "codes": []
+            },
+            {
+              "category": "PERMANENT",
+              "outcome": "TIMEOUT",
+              "codes": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "snapshotVersion": 1,
+      "deviceId": "sim-device-001",
+      "vehicleId": "venue-2021",
+      "bootId": "123e4567-e89b-42d3-a456-426614174000",
+      "diagnosticSequence": 5,
+      "capturedAt": "2026-10-22T12:00:10Z",
+      "source": "SIMULATED",
+      "ecus": [
+        {
+          "ecuId": "SIMULATOR",
+          "outcome": "UNAVAILABLE",
+          "mil": {
+            "outcome": "UNAVAILABLE",
+            "illuminated": null
+          },
+          "categories": [
+            {
+              "category": "PENDING",
+              "outcome": "UNAVAILABLE",
+              "codes": []
+            },
+            {
+              "category": "CONFIRMED",
+              "outcome": "UNAVAILABLE",
+              "codes": []
+            },
+            {
+              "category": "PERMANENT",
+              "outcome": "UNAVAILABLE",
+              "codes": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "snapshotVersion": 1,
+      "deviceId": "sim-device-001",
+      "vehicleId": "venue-2021",
+      "bootId": "123e4567-e89b-42d3-a456-426614174000",
+      "diagnosticSequence": 6,
+      "capturedAt": "2026-10-22T12:00:12Z",
+      "source": "SIMULATED",
+      "ecus": [
+        {
+          "ecuId": "SIMULATOR",
+          "outcome": "FAILED",
+          "mil": {
+            "outcome": "FAILED",
+            "illuminated": null
+          },
+          "categories": [
+            {
+              "category": "PENDING",
+              "outcome": "FAILED",
+              "codes": []
+            },
+            {
+              "category": "CONFIRMED",
+              "outcome": "FAILED",
+              "codes": []
+            },
+            {
+              "category": "PERMANENT",
+              "outcome": "FAILED",
+              "codes": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "snapshotVersion": 1,
+      "deviceId": "sim-device-001",
+      "vehicleId": "venue-2021",
+      "bootId": "123e4567-e89b-42d3-a456-426614174000",
+      "diagnosticSequence": 7,
+      "capturedAt": "2026-10-22T12:00:14Z",
+      "source": "SIMULATED",
+      "ecus": [
+        {
+          "ecuId": "SIMULATOR",
+          "outcome": "TIMEOUT",
+          "mil": {
+            "outcome": "TIMEOUT",
+            "illuminated": null
+          },
+          "categories": [
+            {
+              "category": "PENDING",
+              "outcome": "TIMEOUT",
+              "codes": []
+            },
+            {
+              "category": "CONFIRMED",
+              "outcome": "TIMEOUT",
+              "codes": []
+            },
+            {
+              "category": "PERMANENT",
+              "outcome": "TIMEOUT",
+              "codes": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "snapshotVersion": 1,
+      "deviceId": "sim-device-001",
+      "vehicleId": "venue-2021",
+      "bootId": "123e4567-e89b-42d3-a456-426614174000",
+      "diagnosticSequence": 8,
+      "capturedAt": "2026-10-22T12:00:16Z",
+      "source": "SIMULATED",
+      "ecus": [
+        {
+          "ecuId": "SIMULATOR",
+          "outcome": "COMPLETE",
+          "mil": {
+            "outcome": "COMPLETE",
+            "illuminated": false
+          },
+          "categories": [
+            {
+              "category": "PENDING",
+              "outcome": "COMPLETE",
+              "codes": []
+            },
+            {
+              "category": "CONFIRMED",
+              "outcome": "COMPLETE",
+              "codes": []
+            },
+            {
+              "category": "PERMANENT",
+              "outcome": "COMPLETE",
+              "codes": [
+                "P0117"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "snapshotVersion": 1,
+      "deviceId": "sim-device-001",
+      "vehicleId": "venue-2021",
+      "bootId": "123e4567-e89b-42d3-a456-426614174000",
+      "diagnosticSequence": 9,
+      "capturedAt": "2026-10-22T12:00:18Z",
+      "source": "SIMULATED",
+      "ecus": [
+        {
+          "ecuId": "SIMULATOR",
+          "outcome": "COMPLETE",
+          "mil": {
+            "outcome": "COMPLETE",
+            "illuminated": false
+          },
+          "categories": [
+            {
+              "category": "PENDING",
+              "outcome": "COMPLETE",
+              "codes": []
+            },
+            {
+              "category": "CONFIRMED",
+              "outcome": "COMPLETE",
+              "codes": []
+            },
+            {
+              "category": "PERMANENT",
+              "outcome": "COMPLETE",
+              "codes": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "snapshotVersion": 1,
+      "deviceId": "sim-device-001",
+      "vehicleId": "venue-2021",
+      "bootId": "123e4567-e89b-42d3-a456-426614174000",
+      "diagnosticSequence": 10,
+      "capturedAt": "2026-10-22T12:00:20Z",
+      "source": "SIMULATED",
+      "ecus": [
+        {
+          "ecuId": "SIMULATOR",
+          "outcome": "COMPLETE",
+          "mil": {
+            "outcome": "COMPLETE",
+            "illuminated": true
+          },
+          "categories": [
+            {
+              "category": "PENDING",
+              "outcome": "COMPLETE",
+              "codes": []
+            },
+            {
+              "category": "CONFIRMED",
+              "outcome": "COMPLETE",
+              "codes": [
+                "P0117",
+                "P1999"
+              ]
+            },
+            {
+              "category": "PERMANENT",
+              "outcome": "COMPLETE",
+              "codes": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "snapshotVersion": 1,
+      "deviceId": "sim-device-001",
+      "vehicleId": "venue-2021",
+      "bootId": "123e4567-e89b-42d3-a456-426614174000",
+      "diagnosticSequence": 11,
+      "capturedAt": "2026-10-22T12:00:03.000001Z",
+      "source": "SIMULATED",
+      "ecus": [
+        {
+          "ecuId": "SIMULATOR",
+          "outcome": "COMPLETE",
+          "mil": {
+            "outcome": "COMPLETE",
+            "illuminated": true
+          },
+          "categories": [
+            {
+              "category": "PENDING",
+              "outcome": "COMPLETE",
+              "codes": []
+            },
+            {
+              "category": "CONFIRMED",
+              "outcome": "COMPLETE",
+              "codes": [
+                "P0117"
+              ]
+            },
+            {
+              "category": "PERMANENT",
+              "outcome": "COMPLETE",
+              "codes": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "snapshotVersion": 1,
+      "deviceId": "sim-device-001",
+      "vehicleId": "venue-2021",
+      "bootId": "223e4567-e89b-42d3-a456-426614174000",
+      "diagnosticSequence": 0,
+      "capturedAt": "2026-10-22T12:00:22Z",
+      "source": "SIMULATED",
+      "ecus": [
+        {
+          "ecuId": "SIMULATOR",
+          "outcome": "COMPLETE",
+          "mil": {
+            "outcome": "COMPLETE",
+            "illuminated": true
+          },
+          "categories": [
+            {
+              "category": "PENDING",
+              "outcome": "COMPLETE",
+              "codes": []
+            },
+            {
+              "category": "CONFIRMED",
+              "outcome": "COMPLETE",
+              "codes": [
+                "P0117",
+                "P1999"
+              ]
+            },
+            {
+              "category": "PERMANENT",
+              "outcome": "COMPLETE",
+              "codes": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "deliveryOrder": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    3,
+    12
+  ],
+  "expected": {
+    "deliveries": 15,
+    "uniqueSnapshots": 13,
+    "duplicates": 2,
+    "historicalOnlyIndices": [
+      11
+    ],
+    "eventCycles": 5,
+    "confirmedCodeAdvisoryCycles": 3,
+    "cycles": [
+      {
+        "category": "PENDING",
+        "code": "P0117",
+        "cycle": 1,
+        "firstOffset": 2,
+        "lastPositiveOffset": 6,
+        "positiveObservationCount": 3,
+        "absentOffset": 16
+      },
+      {
+        "category": "CONFIRMED",
+        "code": "P0117",
+        "cycle": 1,
+        "firstOffset": 4,
+        "lastPositiveOffset": 6,
+        "positiveObservationCount": 2,
+        "absentOffset": 16
+      },
+      {
+        "category": "PERMANENT",
+        "code": "P0117",
+        "cycle": 1,
+        "firstOffset": 4,
+        "lastPositiveOffset": 16,
+        "positiveObservationCount": 3,
+        "absentOffset": 18
+      },
+      {
+        "category": "CONFIRMED",
+        "code": "P0117",
+        "cycle": 2,
+        "firstOffset": 20,
+        "lastPositiveOffset": 22,
+        "positiveObservationCount": 2,
+        "absentOffset": null
+      },
+      {
+        "category": "CONFIRMED",
+        "code": "P1999",
+        "cycle": 1,
+        "firstOffset": 20,
+        "lastPositiveOffset": 22,
+        "positiveObservationCount": 2,
+        "absentOffset": null
+      }
+    ],
+    "implementationStatus": "EXPECTED ONLY: event persistence and advisory derivation belong to checkpoints 2 and 3."
+  },
+  "validExtra": [
+    {
+      "name": "partial-positive-is-evidence-not-absence",
+      "payload": {
+        "snapshotVersion": 1,
+        "deviceId": "sim-device-001",
+        "vehicleId": "venue-2021",
+        "bootId": "123e4567-e89b-42d3-a456-426614174000",
+        "diagnosticSequence": 0,
+        "capturedAt": "2026-10-22T12:00:00Z",
+        "source": "SIMULATED",
+        "ecus": [
+          {
+            "ecuId": "SIMULATOR",
+            "outcome": "PARTIAL",
+            "mil": {
+              "outcome": "COMPLETE",
+              "illuminated": false
+            },
+            "categories": [
+              {
+                "category": "PENDING",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "CONFIRMED",
+                "outcome": "PARTIAL",
+                "codes": [
+                  "P0117"
+                ]
+              },
+              {
+                "category": "PERMANENT",
+                "outcome": "COMPLETE",
+                "codes": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "two-separate-ecu-scopes",
+      "payload": {
+        "snapshotVersion": 1,
+        "deviceId": "sim-device-001",
+        "vehicleId": "venue-2021",
+        "bootId": "123e4567-e89b-42d3-a456-426614174000",
+        "diagnosticSequence": 0,
+        "capturedAt": "2026-10-22T12:00:00Z",
+        "source": "SIMULATED",
+        "ecus": [
+          {
+            "ecuId": "ABS",
+            "outcome": "COMPLETE",
+            "mil": {
+              "outcome": "COMPLETE",
+              "illuminated": false
+            },
+            "categories": [
+              {
+                "category": "PENDING",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "CONFIRMED",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "PERMANENT",
+                "outcome": "COMPLETE",
+                "codes": []
+              }
+            ]
+          },
+          {
+            "ecuId": "SIMULATOR",
+            "outcome": "COMPLETE",
+            "mil": {
+              "outcome": "COMPLETE",
+              "illuminated": false
+            },
+            "categories": [
+              {
+                "category": "PENDING",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "CONFIRMED",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "PERMANENT",
+                "outcome": "COMPLETE",
+                "codes": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "future-obd-wire-enum-not-physical-support",
+      "payload": {
+        "snapshotVersion": 1,
+        "deviceId": "sim-device-001",
+        "vehicleId": "venue-2021",
+        "bootId": "123e4567-e89b-42d3-a456-426614174000",
+        "diagnosticSequence": 0,
+        "capturedAt": "2026-10-22T12:00:00Z",
+        "source": "OBD",
+        "ecus": [
+          {
+            "ecuId": "SIMULATOR",
+            "outcome": "COMPLETE",
+            "mil": {
+              "outcome": "COMPLETE",
+              "illuminated": false
+            },
+            "categories": [
+              {
+                "category": "PENDING",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "CONFIRMED",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "PERMANENT",
+                "outcome": "COMPLETE",
+                "codes": []
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "bad-code",
+      "schemaInvalid": true,
+      "payload": {
+        "snapshotVersion": 1,
+        "deviceId": "sim-device-001",
+        "vehicleId": "venue-2021",
+        "bootId": "123e4567-e89b-42d3-a456-426614174000",
+        "diagnosticSequence": 0,
+        "capturedAt": "2026-10-22T12:00:00Z",
+        "source": "SIMULATED",
+        "ecus": [
+          {
+            "ecuId": "SIMULATOR",
+            "outcome": "COMPLETE",
+            "mil": {
+              "outcome": "COMPLETE",
+              "illuminated": false
+            },
+            "categories": [
+              {
+                "category": "PENDING",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "CONFIRMED",
+                "outcome": "COMPLETE",
+                "codes": [
+                  "not-a-code"
+                ]
+              },
+              {
+                "category": "PERMANENT",
+                "outcome": "COMPLETE",
+                "codes": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "unknown-source",
+      "schemaInvalid": true,
+      "payload": {
+        "snapshotVersion": 1,
+        "deviceId": "sim-device-001",
+        "vehicleId": "venue-2021",
+        "bootId": "123e4567-e89b-42d3-a456-426614174000",
+        "diagnosticSequence": 0,
+        "capturedAt": "2026-10-22T12:00:00Z",
+        "source": "GUESS",
+        "ecus": [
+          {
+            "ecuId": "SIMULATOR",
+            "outcome": "COMPLETE",
+            "mil": {
+              "outcome": "COMPLETE",
+              "illuminated": false
+            },
+            "categories": [
+              {
+                "category": "PENDING",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "CONFIRMED",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "PERMANENT",
+                "outcome": "COMPLETE",
+                "codes": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "negative-sequence",
+      "schemaInvalid": true,
+      "payload": {
+        "snapshotVersion": 1,
+        "deviceId": "sim-device-001",
+        "vehicleId": "venue-2021",
+        "bootId": "123e4567-e89b-42d3-a456-426614174000",
+        "diagnosticSequence": -1,
+        "capturedAt": "2026-10-22T12:00:00Z",
+        "source": "SIMULATED",
+        "ecus": [
+          {
+            "ecuId": "SIMULATOR",
+            "outcome": "COMPLETE",
+            "mil": {
+              "outcome": "COMPLETE",
+              "illuminated": false
+            },
+            "categories": [
+              {
+                "category": "PENDING",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "CONFIRMED",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "PERMANENT",
+                "outcome": "COMPLETE",
+                "codes": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "boolean-sequence",
+      "schemaInvalid": true,
+      "payload": {
+        "snapshotVersion": 1,
+        "deviceId": "sim-device-001",
+        "vehicleId": "venue-2021",
+        "bootId": "123e4567-e89b-42d3-a456-426614174000",
+        "diagnosticSequence": true,
+        "capturedAt": "2026-10-22T12:00:00Z",
+        "source": "SIMULATED",
+        "ecus": [
+          {
+            "ecuId": "SIMULATOR",
+            "outcome": "COMPLETE",
+            "mil": {
+              "outcome": "COMPLETE",
+              "illuminated": false
+            },
+            "categories": [
+              {
+                "category": "PENDING",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "CONFIRMED",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "PERMANENT",
+                "outcome": "COMPLETE",
+                "codes": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "unknown-field-credentials",
+      "schemaInvalid": true,
+      "payload": {
+        "snapshotVersion": 1,
+        "deviceId": "sim-device-001",
+        "vehicleId": "venue-2021",
+        "bootId": "123e4567-e89b-42d3-a456-426614174000",
+        "diagnosticSequence": 0,
+        "capturedAt": "2026-10-22T12:00:00Z",
+        "source": "SIMULATED",
+        "ecus": [
+          {
+            "ecuId": "SIMULATOR",
+            "outcome": "COMPLETE",
+            "mil": {
+              "outcome": "COMPLETE",
+              "illuminated": false
+            },
+            "categories": [
+              {
+                "category": "PENDING",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "CONFIRMED",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "PERMANENT",
+                "outcome": "COMPLETE",
+                "codes": []
+              }
+            ]
+          }
+        ],
+        "adapterPassword": "must-not-be-accepted"
+      }
+    },
+    {
+      "name": "receipt-is-server-only",
+      "schemaInvalid": true,
+      "payload": {
+        "snapshotVersion": 1,
+        "deviceId": "sim-device-001",
+        "vehicleId": "venue-2021",
+        "bootId": "123e4567-e89b-42d3-a456-426614174000",
+        "diagnosticSequence": 0,
+        "capturedAt": "2026-10-22T12:00:00Z",
+        "source": "SIMULATED",
+        "ecus": [
+          {
+            "ecuId": "SIMULATOR",
+            "outcome": "COMPLETE",
+            "mil": {
+              "outcome": "COMPLETE",
+              "illuminated": false
+            },
+            "categories": [
+              {
+                "category": "PENDING",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "CONFIRMED",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "PERMANENT",
+                "outcome": "COMPLETE",
+                "codes": []
+              }
+            ]
+          }
+        ],
+        "receivedAt": "2026-10-22T12:00:00Z"
+      }
+    },
+    {
+      "name": "too-fine-time",
+      "schemaInvalid": true,
+      "payload": {
+        "snapshotVersion": 1,
+        "deviceId": "sim-device-001",
+        "vehicleId": "venue-2021",
+        "bootId": "123e4567-e89b-42d3-a456-426614174000",
+        "diagnosticSequence": 0,
+        "capturedAt": "2026-10-22T12:00:00.0000001Z",
+        "source": "SIMULATED",
+        "ecus": [
+          {
+            "ecuId": "SIMULATOR",
+            "outcome": "COMPLETE",
+            "mil": {
+              "outcome": "COMPLETE",
+              "illuminated": false
+            },
+            "categories": [
+              {
+                "category": "PENDING",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "CONFIRMED",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "PERMANENT",
+                "outcome": "COMPLETE",
+                "codes": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "unknown-outcome",
+      "schemaInvalid": true,
+      "payload": {
+        "snapshotVersion": 1,
+        "deviceId": "sim-device-001",
+        "vehicleId": "venue-2021",
+        "bootId": "123e4567-e89b-42d3-a456-426614174000",
+        "diagnosticSequence": 0,
+        "capturedAt": "2026-10-22T12:00:00Z",
+        "source": "SIMULATED",
+        "ecus": [
+          {
+            "ecuId": "SIMULATOR",
+            "outcome": "COMPLETE",
+            "mil": {
+              "outcome": "COMPLETE",
+              "illuminated": false
+            },
+            "categories": [
+              {
+                "category": "PENDING",
+                "outcome": "EMPTY",
+                "codes": []
+              },
+              {
+                "category": "CONFIRMED",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "PERMANENT",
+                "outcome": "COMPLETE",
+                "codes": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "duplicate-ecu",
+      "schemaInvalid": false,
+      "payload": {
+        "snapshotVersion": 1,
+        "deviceId": "sim-device-001",
+        "vehicleId": "venue-2021",
+        "bootId": "123e4567-e89b-42d3-a456-426614174000",
+        "diagnosticSequence": 0,
+        "capturedAt": "2026-10-22T12:00:00Z",
+        "source": "SIMULATED",
+        "ecus": [
+          {
+            "ecuId": "SIMULATOR",
+            "outcome": "COMPLETE",
+            "mil": {
+              "outcome": "COMPLETE",
+              "illuminated": false
+            },
+            "categories": [
+              {
+                "category": "PENDING",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "CONFIRMED",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "PERMANENT",
+                "outcome": "COMPLETE",
+                "codes": []
+              }
+            ]
+          },
+          {
+            "ecuId": "SIMULATOR",
+            "outcome": "COMPLETE",
+            "mil": {
+              "outcome": "COMPLETE",
+              "illuminated": false
+            },
+            "categories": [
+              {
+                "category": "PENDING",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "CONFIRMED",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "PERMANENT",
+                "outcome": "COMPLETE",
+                "codes": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "duplicate-category",
+      "schemaInvalid": false,
+      "payload": {
+        "snapshotVersion": 1,
+        "deviceId": "sim-device-001",
+        "vehicleId": "venue-2021",
+        "bootId": "123e4567-e89b-42d3-a456-426614174000",
+        "diagnosticSequence": 0,
+        "capturedAt": "2026-10-22T12:00:00Z",
+        "source": "SIMULATED",
+        "ecus": [
+          {
+            "ecuId": "SIMULATOR",
+            "outcome": "COMPLETE",
+            "mil": {
+              "outcome": "COMPLETE",
+              "illuminated": false
+            },
+            "categories": [
+              {
+                "category": "PENDING",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "PENDING",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "PERMANENT",
+                "outcome": "COMPLETE",
+                "codes": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "duplicate-code",
+      "schemaInvalid": true,
+      "payload": {
+        "snapshotVersion": 1,
+        "deviceId": "sim-device-001",
+        "vehicleId": "venue-2021",
+        "bootId": "123e4567-e89b-42d3-a456-426614174000",
+        "diagnosticSequence": 0,
+        "capturedAt": "2026-10-22T12:00:00Z",
+        "source": "SIMULATED",
+        "ecus": [
+          {
+            "ecuId": "SIMULATOR",
+            "outcome": "COMPLETE",
+            "mil": {
+              "outcome": "COMPLETE",
+              "illuminated": false
+            },
+            "categories": [
+              {
+                "category": "PENDING",
+                "outcome": "COMPLETE",
+                "codes": [
+                  "P0117",
+                  "P0117"
+                ]
+              },
+              {
+                "category": "CONFIRMED",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "PERMANENT",
+                "outcome": "COMPLETE",
+                "codes": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "failed-carries-positive-codes",
+      "schemaInvalid": true,
+      "payload": {
+        "snapshotVersion": 1,
+        "deviceId": "sim-device-001",
+        "vehicleId": "venue-2021",
+        "bootId": "123e4567-e89b-42d3-a456-426614174000",
+        "diagnosticSequence": 0,
+        "capturedAt": "2026-10-22T12:00:00Z",
+        "source": "SIMULATED",
+        "ecus": [
+          {
+            "ecuId": "SIMULATOR",
+            "outcome": "COMPLETE",
+            "mil": {
+              "outcome": "COMPLETE",
+              "illuminated": false
+            },
+            "categories": [
+              {
+                "category": "PENDING",
+                "outcome": "FAILED",
+                "codes": [
+                  "P0117"
+                ]
+              },
+              {
+                "category": "CONFIRMED",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "PERMANENT",
+                "outcome": "COMPLETE",
+                "codes": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "complete-ecu-with-failed-category",
+      "schemaInvalid": false,
+      "payload": {
+        "snapshotVersion": 1,
+        "deviceId": "sim-device-001",
+        "vehicleId": "venue-2021",
+        "bootId": "123e4567-e89b-42d3-a456-426614174000",
+        "diagnosticSequence": 0,
+        "capturedAt": "2026-10-22T12:00:00Z",
+        "source": "SIMULATED",
+        "ecus": [
+          {
+            "ecuId": "SIMULATOR",
+            "outcome": "COMPLETE",
+            "mil": {
+              "outcome": "COMPLETE",
+              "illuminated": false
+            },
+            "categories": [
+              {
+                "category": "PENDING",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "CONFIRMED",
+                "outcome": "FAILED",
+                "codes": []
+              },
+              {
+                "category": "PERMANENT",
+                "outcome": "COMPLETE",
+                "codes": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "unknown-mil-with-false-value",
+      "schemaInvalid": true,
+      "payload": {
+        "snapshotVersion": 1,
+        "deviceId": "sim-device-001",
+        "vehicleId": "venue-2021",
+        "bootId": "123e4567-e89b-42d3-a456-426614174000",
+        "diagnosticSequence": 0,
+        "capturedAt": "2026-10-22T12:00:00Z",
+        "source": "SIMULATED",
+        "ecus": [
+          {
+            "ecuId": "SIMULATOR",
+            "outcome": "COMPLETE",
+            "mil": {
+              "outcome": "UNAVAILABLE",
+              "illuminated": false
+            },
+            "categories": [
+              {
+                "category": "PENDING",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "CONFIRMED",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "PERMANENT",
+                "outcome": "COMPLETE",
+                "codes": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "unsorted-codes",
+      "schemaInvalid": false,
+      "payload": {
+        "snapshotVersion": 1,
+        "deviceId": "sim-device-001",
+        "vehicleId": "venue-2021",
+        "bootId": "123e4567-e89b-42d3-a456-426614174000",
+        "diagnosticSequence": 0,
+        "capturedAt": "2026-10-22T12:00:00Z",
+        "source": "SIMULATED",
+        "ecus": [
+          {
+            "ecuId": "SIMULATOR",
+            "outcome": "COMPLETE",
+            "mil": {
+              "outcome": "COMPLETE",
+              "illuminated": false
+            },
+            "categories": [
+              {
+                "category": "PENDING",
+                "outcome": "COMPLETE",
+                "codes": [
+                  "P1999",
+                  "P0117"
+                ]
+              },
+              {
+                "category": "CONFIRMED",
+                "outcome": "COMPLETE",
+                "codes": []
+              },
+              {
+                "category": "PERMANENT",
+                "outcome": "COMPLETE",
+                "codes": []
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

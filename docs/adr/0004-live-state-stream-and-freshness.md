@@ -31,10 +31,16 @@ cleanup workers with a bounded 64-task queue. Per client, at most one
 pending snapshot and one in-flight write. Writes taking over five seconds are
 retired by the coordinator; errors/completion/timeout retire subscriptions.
 Retirement stops further updates immediately and schedules transport completion
-off the coordinator and writer pool. Spring completion can wait on the emitter's
-write lock and can flush the socket, so it must never run inline on either pool.
-Each retired client retains its global/per-vehicle capacity slot until both its
-writer and completion task have returned. Cleanup submission rejection retains
+off the coordinator and writer pool. Application retirement dispatches a terminal
+AsyncRequestNotUsableException without Spring's normal completion flush. A send
+IOException marks container ownership under the emitter's write lock; error and
+timeout callbacks do likewise. The application never redundantly completes an
+I/O-failed transport. Only its container completion callback confirms cleanup.
+Each retired client retains its global/per-vehicle capacity slot until its writer
+and any submitted cleanup task return, and transport completion is established
+(application cleanup return or authoritative container completion).
+No slot is released just because error or
+timeout notification arrived. Cleanup submission rejection retains
 that slot and is retried on a later tick, never with an inline fallback. This
 bounds active plus retiring resources under churn; saturation returns 503 rather
 than admitting an unbounded collection of stuck transports.
@@ -63,6 +69,22 @@ temporarily hit the per-vehicle cap; reconnect/resnapshot after capacity frees.
 Notifications are process-local: a single backend instance handles this slice.
 Multiple backend instances, durable replay, auth and brokers are deferred.
 No transaction is held for a stream's lifetime. Loopback-only defaults remain.
+
+October 23 cleanup correction: normal Spring complete() can flush while holding
+its async-response lock, opposite Tomcat's socket/error-listener lock order. The
+real trip demo exposed that deadlock during shutdown. LiveEmitter now distinguishes
+application retirement from container-owned I/O failure; the error dispatch path
+does not perform that second flush. This follows
+[Spring's streaming error-ownership guidance](https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-ann-async.html#webmvc-emitter).
+The writer pool uses shutdown(), not shutdownNow(), so already-queued closed-client
+drains run their finally blocks instead of retaining draining=true forever.
+Response attachment remains bounded at five seconds. Pools, queues, leases,
+subscription limits and the demo's ten-second zero-reservation assertion are
+unchanged. Deterministic real-emitter handler tests cover no-flush retirement,
+I/O ownership and the queued-close/write race; hub tests preserve reservations
+until container completion and writer return, and a 64-client shutdown test
+observes an actual writer backlog before closing. Full results are recorded in
+milestone-verification.md; this is not an authentication or transport redesign.
 
 ## UI rules
 

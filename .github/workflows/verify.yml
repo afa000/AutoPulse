@@ -37,8 +37,8 @@ jobs:
           java-version: '21'
           cache: maven
           cache-dependency-path: server/pom.xml
-      - name: Live and trip-retention browsers through disposable Java and PostgreSQL
-        run: bash ./mvnw --batch-mode test -Dtest=DashboardBrowserDemo,TripMilestoneDemo -Dautopulse.python=python
+      - name: Live, trip-retention, numeric and care browsers through disposable Java and PostgreSQL
+        run: bash ./mvnw --batch-mode test -Dtest=DashboardBrowserDemo,TripMilestoneDemo,NumericAnalyticsDemo,CareBrowserDemo,CareMilestoneDemo -Dautopulse.python=python
         working-directory: server
   python:
     runs-on: ubuntu-latest
@@ -80,7 +80,11 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - run: python -m pip install -e ./device-agent
+      - run: python -m pip install -e './device-agent[dev]'
+      - name: Actual diagnostic HTTP responses match shared schemas
+        run: python scripts/verify_diagnostic_http.py
+      - name: Actual maintenance HTTP responses match shared schemas
+        run: python scripts/verify_maintenance_http.py
       - name: Cross-runtime commute and interrupted-ack demonstration
         working-directory: server
         run: bash ./mvnw --batch-mode test -Dtest=CommuteDemo -Dautopulse.python=python

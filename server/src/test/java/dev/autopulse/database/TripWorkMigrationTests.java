@@ -1004,7 +1004,7 @@ class TripWorkMigrationTests {
 
     @Test void freshDefaultIsEmptyAndRestartDoesNotRewriteMigrations() {
         migrate();
-        assertThat(current().info().current().getVersion().toString()).isEqualTo("931");
+        assertThat(current().info().current().getVersion().toString()).isEqualTo("933");
         assertThat(count("vehicle")).isZero();
         assertThat(count("trip_policy")).isZero();
         var history = jdbc.queryForList("select version,checksum from flyway_schema_history order by installed_rank");
@@ -1479,7 +1479,7 @@ class TripWorkMigrationTests {
         assertThat(count("telemetry_reading")).isEqualTo(1);
         assertThat(jdbc.queryForMap("select payload::text,received_at from telemetry_reading where id=?", row)).isEqualTo(original);
         assertThat(jdbc.queryForList("select version,checksum from flyway_schema_history where version in ('1','900') order by version")).isEqualTo(originalHistory);
-        assertThat(jdbc.queryForObject("select max(version::int) from flyway_schema_history", Integer.class)).isEqualTo(931);
+        assertThat(jdbc.queryForObject("select max(version::int) from flyway_schema_history", Integer.class)).isEqualTo(933);
         assertThat(count("trip_work_item")).isZero(); // backfill is bounded work, not migration-time raw scanning
         assertThat(backfill().enqueuePage(VEHICLE, 2)).isEqualTo(new TripBackfill.Page(1, 1, true, false));
         assertThat(jdbc.queryForObject("select accepted_at from trip_work_item where reading_id=?", Timestamp.class, row))

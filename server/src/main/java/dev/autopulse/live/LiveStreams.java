@@ -3,7 +3,6 @@ package dev.autopulse.live;
 import dev.autopulse.telemetry.TelemetryRepository;
 import jakarta.annotation.PreDestroy;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -34,26 +33,21 @@ public class LiveStreams {
     public void committed(TelemetryCommitted event) { event.vehicles().forEach(hub::committed); }
 
     public SseEmitter subscribe(UUID vehicle, String slug) {
-        CountDownLatch responseReady = new CountDownLatch(1);
-        SseEmitter emitter = new SseEmitter(120_000L) {
-            @Override protected void extendResponse(org.springframework.http.server.ServerHttpResponse response) {
-                super.extendResponse(response);
-                responseReady.countDown();
-            }
-        };
+        LiveEmitter emitter = new LiveEmitter();
         LiveHub.Client client = hub.subscribe(vehicle, slug, new LiveHub.Sink() {
             public void send(LiveHub.Frame frame) throws Exception {
                 // A request aborted before MVC attaches the response must not
                 // accumulate invisible early-send buffers until the lifetime cap.
-                if (!responseReady.await(5, TimeUnit.SECONDS)) throw new java.io.IOException("Stream response was not attached");
+                if (!emitter.awaitResponse()) throw new java.io.IOException("Stream response was not attached");
                 if (frame.event() == null) emitter.send(SseEmitter.event().comment(frame.data()));
                 else emitter.send(SseEmitter.event().name(frame.event()).data(frame.data(), org.springframework.http.MediaType.APPLICATION_JSON));
             }
-            public void close() { emitter.complete(); }
+            public void close() { emitter.retire(); }
+            public boolean awaitingContainerCompletion() { return emitter.awaitingContainerCompletion(); }
         });
-        emitter.onCompletion(client::close);
-        emitter.onTimeout(client::close);
-        emitter.onError(error -> client.close());
+        emitter.onCompletion(() -> { emitter.containerClosing();client.transportComplete(); });
+        emitter.onTimeout(() -> { emitter.containerClosing();client.close(); });
+        emitter.onError(error -> { emitter.containerClosing();client.close(); });
         return emitter;
     }
 
@@ -62,7 +56,9 @@ public class LiveStreams {
     @PreDestroy public void close() {
         coordinator.shutdownNow();
         hub.close();
-        writers.shutdownNow();
+        // Run already-queued (now closed) drains so each releases its reservation.
+        // shutdownNow discards them with draining=true forever; response attachment wait is bounded.
+        writers.shutdown();
         cleanup.shutdown();
     }
 }

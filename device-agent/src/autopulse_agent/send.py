@@ -13,9 +13,10 @@ from .models.telemetry_json import sample_to_payload
 from .scenario_args import add_scenario_arguments, source_from_args
 from .capture import FORMAT, bounded_batches, capture_batches, encode_batch
 from .transport.http import BatchSender, DeliveryError, DeliverySummary, HttpBatchClient
+from .sources.protocol import TelemetrySource
 
 
-def send_source(source, sender, *, interval=2.0, batch_size=1, clock=time.monotonic, sleep=time.sleep, capture=None):
+def send_source(source: TelemetrySource, sender, *, interval=2.0, batch_size=1, clock=time.monotonic, sleep=time.sleep, capture=None):
     if not math.isfinite(interval) or interval <= 0 or not 1 <= batch_size <= 100:
         raise ValueError("interval must be positive and finite; batch_size must be 1-100")
     total = DeliverySummary()

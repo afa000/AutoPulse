@@ -128,3 +128,17 @@ def test_contract_rejects_unbounded_pages_and_invalid_distance_ratio():
     unavailable["distance"]["kilometres"] = None
     unavailable["distance"]["coveredSeconds"] = 0
     validator("Trip").validate(unavailable)
+
+
+def test_large_analytical_tokens_are_valid_exact_json_numbers_not_sensor_limits():
+    fixture = read_json("analytics-numeric-cases.json")
+    schema = validator("MetricStatistics")
+    for case in fixture["cases"]:
+        value = case["sum"]
+        schema.validate({"count": case["count"], "sum": value,
+                         "min": None if value is None else Decimal("-1e308"),
+                         "max": None if value is None else Decimal("1e308")})
+    assert fixture["cases"][0]["sum"] == Decimal("2.7e309")
+    assert fixture["cases"][1]["sum"] == Decimal("-2.7e309")
+    assert fixture["cases"][2]["sum"] == 14 * Decimal("1e308") - 13 * Decimal("1e308")
+    validator("NullableDistanceRatio").validate(fixture["distance"])

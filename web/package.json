@@ -16,6 +16,8 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "decimal.js": "10.6.0",
+    "lossless-json": "4.3.3",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "react-is": "19.3.1",

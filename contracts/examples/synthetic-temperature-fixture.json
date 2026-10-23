@@ -1,0 +1,167 @@
+{
+  "description": "Synthetic test rules, NOT Hyundai limits or a physical overheating diagnosis.",
+  "rule": {
+    "version": "synthetic-temperature-v1",
+    "thresholdC": 110,
+    "sustainSeconds": 30,
+    "maxGapSeconds": 5,
+    "recoveryC": 95,
+    "recoverySeconds": 2
+  },
+  "readings": [
+    {
+      "offsetSeconds": 0,
+      "coolantTempC": 90
+    },
+    {
+      "offsetSeconds": 2,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 4,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 6,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 8,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 10,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 12,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 14,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 16,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 18,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 20,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 22,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 24,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 26,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 28,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 30,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 32,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 34,
+      "coolantTempC": null
+    },
+    {
+      "offsetSeconds": 36,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 38,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 40,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 42,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 44,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 46,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 48,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 50,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 52,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 54,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 56,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 58,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 60,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 62,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 64,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 66,
+      "coolantTempC": 120
+    },
+    {
+      "offsetSeconds": 68,
+      "coolantTempC": 90
+    },
+    {
+      "offsetSeconds": 70,
+      "coolantTempC": 90
+    }
+  ],
+  "expected": {
+    "inputSamples": 36,
+    "conditionCycles": 1,
+    "advisoryCycles": 1,
+    "opensAtOffsetSeconds": 32,
+    "unknownAtOffsetSeconds": 34,
+    "recoversAtOffsetSeconds": 70,
+    "dtcInferred": false,
+    "implementationStatus": "EXPECTED ONLY: rule processing belongs to checkpoint 3."
+  }
+}

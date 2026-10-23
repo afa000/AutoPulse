@@ -36,10 +36,14 @@ try {
             if ($onWindows) { & .\mvnw.cmd --batch-mode test }
             else { & bash ./mvnw --batch-mode test }
             if ($LASTEXITCODE -ne 0) { throw 'Java/PostgreSQL verification failed.' }
+            & $Python ../scripts/verify_diagnostic_http.py
+            if ($LASTEXITCODE -ne 0) { throw 'Actual diagnostic HTTP contract verification failed.' }
+            & $Python ../scripts/verify_maintenance_http.py
+            if ($LASTEXITCODE -ne 0) { throw 'Actual maintenance HTTP contract verification failed.' }
             if ($Browser) {
-                if ($onWindows) { & .\mvnw.cmd --batch-mode test '-Dtest=DashboardBrowserDemo,TripMilestoneDemo' "-Dautopulse.python=$Python" }
-                else { & bash ./mvnw --batch-mode test '-Dtest=DashboardBrowserDemo,TripMilestoneDemo' "-Dautopulse.python=$Python" }
-                if ($LASTEXITCODE -ne 0) { throw 'Isolated browser verification failed. See server/target/dashboard-browser.log, server/target/trip-milestone-browser.log and Surefire reports. If Chromium is missing, run npm exec -- playwright install chromium in web/.' }
+                if ($onWindows) { & .\mvnw.cmd --batch-mode test '-Dtest=DashboardBrowserDemo,TripMilestoneDemo,NumericAnalyticsDemo,CareBrowserDemo,CareMilestoneDemo' "-Dautopulse.python=$Python" }
+                else { & bash ./mvnw --batch-mode test '-Dtest=DashboardBrowserDemo,TripMilestoneDemo,NumericAnalyticsDemo,CareBrowserDemo,CareMilestoneDemo' "-Dautopulse.python=$Python" }
+                if ($LASTEXITCODE -ne 0) { throw 'Isolated browser verification failed. See server/target/dashboard-browser.log, server/target/trip-milestone-browser.log, server/target/numeric-analytics-browser.log, server/target/care-browser.log, server/target/care-milestone-*-browser.log and Surefire reports. If Chromium is missing, run npm exec -- playwright install chromium in web/.' }
             }
         } finally { Pop-Location }
         Push-Location web

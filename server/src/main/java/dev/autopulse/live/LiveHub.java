@@ -18,6 +18,7 @@ public final class LiveHub implements AutoCloseable {
     public interface Sink {
         void send(Frame frame) throws Exception;
         void close();
+        default boolean awaitingContainerCompletion() { return false; }
     }
     private static final long SECOND = 1_000_000_000L;
     private final ConcurrentHashMap<UUID, State> states = new ConcurrentHashMap<>();
@@ -124,6 +125,7 @@ public final class LiveHub implements AutoCloseable {
         private final AtomicBoolean draining = new AtomicBoolean();
         private final AtomicBoolean writing = new AtomicBoolean();
         private final AtomicBoolean cleanupScheduled = new AtomicBoolean();
+        private final AtomicBoolean cleanupOutstanding = new AtomicBoolean();
         private final AtomicBoolean cleanupFinished = new AtomicBoolean();
         private final AtomicBoolean released = new AtomicBoolean();
         private final AtomicReference<Frame> pending = new AtomicReference<>();
@@ -155,28 +157,41 @@ public final class LiveHub implements AutoCloseable {
                 else if (pending.get() != null) drain();
             }
         }
-        public void close() {
+        public synchronized void close() {
             if (closed.compareAndSet(false, true)) {
                 pending.set(null);
                 scheduleCleanup();
             }
         }
-        private void scheduleCleanup() {
+        /** Container completion is authoritative after I/O errors; never flush that transport again. */
+        public synchronized void transportComplete() {
+            closed.set(true);pending.set(null);cleanupFinished.set(true);releaseIfFinished();
+        }
+        private synchronized void scheduleCleanup() {
+            if(cleanupFinished.get()) { releaseIfFinished();return; }
             if (!cleanupScheduled.compareAndSet(false, true)) return;
+            cleanupOutstanding.set(true);
             try {
                 cleanup.execute(() -> {
-                    try { sink.close(); }
+                    try { if(!sink.awaitingContainerCompletion()) sink.close(); }
                     catch (RuntimeException alreadyTerminated) { /* response may already be complete */ }
-                    finally { cleanupFinished.set(true); releaseIfFinished(); }
+                    finally {
+                        // Keep its reservation until the container callback AND in-flight writer return.
+                        if(!sink.awaitingContainerCompletion()) cleanupFinished.set(true);
+                        cleanupOutstanding.set(false);
+                        releaseIfFinished();
+                    }
                 });
             } catch (RejectedExecutionException full) {
                 // Never complete inline: completion can wait for Spring's write lock
                 // or flush a blocked socket. Retain capacity and retry on a later tick.
                 cleanupScheduled.set(false);
+                cleanupOutstanding.set(false);
+                releaseIfFinished();
             }
         }
-        private void releaseIfFinished() {
-            if (closed.get() && cleanupFinished.get() && !draining.get() && released.compareAndSet(false, true)) {
+        private synchronized void releaseIfFinished() {
+            if (closed.get() && cleanupFinished.get() && !cleanupOutstanding.get() && !draining.get() && released.compareAndSet(false, true)) {
                 state.clients.remove(this);
                 count.decrementAndGet();
             }

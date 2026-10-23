@@ -21,6 +21,43 @@ import tools.jackson.databind.json.JsonMapper;
 import static org.assertj.core.api.Assertions.*;
 
 class LiveHubTests {
+    @Test void containerCompletionDoesNotReleaseAQueuedCleanupTaskReservationEarly() {
+        var tasks=new ArrayDeque<Runnable>();
+        try(var hub=new LiveHub(id->Optional.empty(),Runnable::run,tasks::add,System::nanoTime)) {
+            var client=hub.subscribe(UUID.randomUUID(),"fixture",new LiveHub.Sink() {
+                public void send(LiveHub.Frame frame) { }
+                public void close() { }
+            });
+            client.close();assertThat(tasks).hasSize(1);client.transportComplete();
+            assertThat(hub.subscriptions()).isEqualTo(1);
+            tasks.remove().run();assertThat(hub.subscriptions()).isZero();
+        }
+    }
+    @Test void containerOwnedDisconnectKeepsReservationUntilCompletionWithoutCompletingTwice() {
+        var closes=new java.util.concurrent.atomic.AtomicInteger();var tasks=new ArrayDeque<Runnable>();
+        try(var hub=new LiveHub(id->Optional.empty(),Runnable::run,tasks::add,System::nanoTime)) {
+            var client=hub.subscribe(UUID.randomUUID(),"fixture",new LiveHub.Sink() {
+                public void send(LiveHub.Frame frame) { }
+                public void close() {closes.incrementAndGet();}
+                public boolean awaitingContainerCompletion() {return true;}
+            });
+            client.close();tasks.remove().run();assertThat(closes).hasValue(0);assertThat(hub.subscriptions()).isEqualTo(1);
+            client.transportComplete();client.transportComplete();assertThat(hub.subscriptions()).isZero();
+        }
+    }
+    @Test void containerCompletionCannotReleaseAnInFlightWriterReservationEarly() throws Exception {
+        var entered=new CountDownLatch(1);var release=new CountDownLatch(1);var writes=Executors.newSingleThreadExecutor();
+        try(var hub=new LiveHub(id->Optional.empty(),writes,Runnable::run,System::nanoTime)) {
+            var client=hub.subscribe(UUID.randomUUID(),"fixture",new LiveHub.Sink() {
+                public void send(LiveHub.Frame frame) throws Exception {entered.countDown();release.await();}
+                public void close() {throw new AssertionError("container owns transport completion");}
+                public boolean awaitingContainerCompletion() {return true;}
+            });
+            hub.tick();assertThat(entered.await(2,TimeUnit.SECONDS)).isTrue();client.transportComplete();
+            assertThat(hub.subscriptions()).isEqualTo(1);release.countDown();
+            org.awaitility.Awaitility.await().atMost(2,TimeUnit.SECONDS).untilAsserted(()->assertThat(hub.subscriptions()).isZero());
+        } finally {release.countDown();writes.shutdownNow();assertThat(writes.awaitTermination(2,TimeUnit.SECONDS)).isTrue();}
+    }
     final UUID vehicle = UUID.randomUUID();
     final AtomicLong now = new AtomicLong();
     final AtomicReference<Optional<TelemetryRepository.Latest>> latest = new AtomicReference<>(Optional.empty());

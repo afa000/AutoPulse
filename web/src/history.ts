@@ -1,12 +1,14 @@
 import { isObject, parseSnapshot } from './telemetry'
 import { metricNames, type Metric, type Trip } from './trips'
+import { displayRatio, exactText, isExactTotal } from './analytics'
 
 export type Resolution = 'raw' | '1m' | '5m'
 export const chartMetrics = [['rpm', 'Engine speed', 'RPM'], ['speedKph', 'Road speed', 'km/h'],
   ['coolantTempC', 'Coolant temperature', '°C'], ['engineLoadPct', 'Engine load', '%']] as const
 export type ChartMetric = typeof chartMetrics[number][0]
 export type HistoryRow = { time: string; end: string | null; boot: string | null; partial: boolean; sampleCount: number;
-  values: Record<ChartMetric, number | null>; counts: Record<ChartMetric, number> }
+  values: Record<ChartMetric, number | null>; counts: Record<ChartMetric, number>;
+  exactTotals?: Record<string, string | null>; outsideDisplayRange?: ChartMetric[] }
 export type HistoryPage = { from: string; to: string; resolution: Resolution; rows: HistoryRow[]; nextCursor: string | null; generation: string;
   availability: { rawState: 'AVAILABLE' | 'PARTIALLY_EXPIRED' | 'EXPIRED'; rawUnavailableBefore: string | null; availableResolutions: Resolution[]; incomplete: boolean } }
 export const resolutions: Resolution[] = ['raw', '1m', '5m']
@@ -72,11 +74,13 @@ export function parseHistory(value: unknown, trip: Trip, range: { from: string; 
         for (const name of metricNames) {
           const m = point.metrics[name]
           if (!isObject(m) || !count(m.count) || m.count > point.sampleCount) return null
-          if (m.count === 0 ? m.sum !== null || m.min !== null || m.max !== null : !finite(m.sum) || !finite(m.min) || !finite(m.max) || m.min > m.max) return null
+          if (m.count === 0 ? m.sum !== null || m.min !== null || m.max !== null : !isExactTotal(m.sum) || !finite(m.min) || !finite(m.max) || m.min > m.max) return null
         }
         const stats = point.metrics as Record<ChartMetric, Metric>
         rows.push({ time: point.bucketStart as string, end: point.bucketEnd as string, boot: null, partial: point.partial, sampleCount: point.sampleCount,
-          values: Object.fromEntries(chartMetrics.map(([name]) => [name, stats[name].count === 0 ? null : stats[name].sum! / stats[name].count])) as HistoryRow['values'],
+          values: Object.fromEntries(chartMetrics.map(([name]) => [name, stats[name].count === 0 ? null : displayRatio(stats[name].sum!, stats[name].count)])) as HistoryRow['values'],
+          exactTotals: Object.fromEntries(metricNames.map(name => [name, (point.metrics as Record<string, Metric>)[name].sum === null ? null : exactText((point.metrics as Record<string, Metric>)[name].sum!)])),
+          outsideDisplayRange: chartMetrics.flatMap(([name]) => stats[name].count > 0 && displayRatio(stats[name].sum!, stats[name].count) === null ? [name] : []),
           counts: Object.fromEntries(chartMetrics.map(([name]) => [name, stats[name].count])) as HistoryRow['counts'] })
       }
     }

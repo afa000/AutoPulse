@@ -1,4 +1,22 @@
 :root { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #142b31; background: #f3f5f0; font-synthesis: none; font-weight: 400; line-height: 1.5; }
+.care-panel { padding: 22px; margin: 22px 0; background: #fff; border: 1px solid #d9e0d9; border-radius: 8px; overflow-wrap: anywhere; min-width: 0; font-size: 14px; }
+.care-panel h2 { font-size: 14px; }
+.care-panel h3 { font-size: 14px; margin-top: 22px; }
+.care-panel summary { cursor: pointer; padding: 12px 0; font-weight: 650; }
+.care-list { list-style: none; padding: 0; }
+.care-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; border: 1px solid #d9e0d9; border-radius: 6px; padding: 18px; }
+.care-form label { display: grid; gap: 6px; min-width: 0; font-size: 13px; }
+.care-form .check { display: flex; align-items: start; }
+.care-form input:not([type="checkbox"]), .care-form select, .care-form textarea { min-width: 0; width: 100%; }
+.care-form p { margin: 0; font-size: 12px; }
+input, textarea { font: inherit; padding: 9px; color: #142b31; background: #fff; border: 1px solid #93aaa0; border-radius: 5px; }
+input:focus-visible, textarea:focus-visible { outline: 3px solid #277d72; outline-offset: 4px; }
+.evidence { margin: 12px 0; }
+.evidence > div { border-left: 2px solid #d9e0d9; padding-left: 12px; margin: 12px 0; }
+.evidence dt { font-size: 12px; font-weight: 700; }
+.evidence dd { margin: 4px 0 0; }
+.scope { border-top: 1px solid #d9e0d9; }
+@media (max-width: 700px) { .masthead { flex-wrap: wrap; } .masthead > .eyebrow { display: none; } .care-form { grid-template-columns: 1fr; } .page-nav { flex-wrap: wrap; margin-left: 0; } .care-panel { padding: 16px; } }
 * { box-sizing: border-box; }
 body { margin: 0; }
 main { max-width: 1280px; margin: auto; padding: 0 48px; }

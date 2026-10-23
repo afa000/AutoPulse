@@ -61,11 +61,14 @@ function HistoryPageView({ trip, generation, resolution, limit, range, nextWindo
               <thead><tr><th scope="col">Measurement / bucket start (UTC)</th>{resolution !== 'raw' && <th scope="col">Bucket end (exclusive UTC)</th>}
                 {chartMetrics.map(([name, title, unit]) => <th key={name} scope="col">{title} ({unit}) · present/total</th>)}<th scope="col">Context</th></tr></thead>
               <tbody>{data.rows.map((row, index) => <tr key={index}><th scope="row"><time>{row.time}</time></th>{resolution !== 'raw' && <td><time>{row.end}</time></td>}
-                {chartMetrics.map(([name]) => <td key={name}>{row.values[name] === null ? 'Unavailable' : displayNumber(row.values[name])} ({row.counts[name]}/{row.sampleCount})</td>)}
+                {chartMetrics.map(([name]) => <td key={name}>{row.outsideDisplayRange?.includes(name) ? 'Outside display range (exact total retained)' : row.values[name] === null ? 'Unavailable' : displayNumber(row.values[name])} ({row.counts[name]}/{row.sampleCount})</td>)}
                 <td>{row.boot ? `Boot ${row.boot}` : row.partial ? 'Clipped partial bucket' : 'Full UTC bucket'}</td></tr>)}</tbody>
             </table>
           </div>
         </details>
+        {resolution !== 'raw' && <details><summary>Exact aggregate totals (unrounded decimal evidence)</summary>
+          {data.rows.map((row, index) => <pre key={index} style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{row.time}{'\n'}{JSON.stringify(row.exactTotals, null, 2)}</pre>)}
+        </details>}
       </>}
     </>}
     <div className="trip-actions pagination">
