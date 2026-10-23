@@ -31,12 +31,19 @@ class TelemetryApiTests {
     @Autowired JdbcTemplate jdbc;
     final HttpClient client = HttpClient.newHttpClient();
     final String batchPath = "/api/v1/device/telemetry/batches";
+    String testBoot;
 
-    @BeforeEach void cleanReadings() { jdbc.update("delete from telemetry_reading"); }
+    @BeforeEach void cleanReadings() {
+        // Raw fixture cleanup must not erase the durable identity ledger.
+        // Each case represents a fresh boot; retries within the case reuse it.
+        testBoot=java.util.UUID.randomUUID().toString();
+        jdbc.update("delete from trip_work_item");
+        jdbc.update("delete from telemetry_reading");
+    }
 
     ObjectNode sample(int sequence, String timestamp) {
         ObjectNode input = (ObjectNode) mapper.readTree(Path.of("../contracts/examples/telemetry-sample.json").toFile());
-        return input.put("sequenceNumber", sequence).put("recordedAt", timestamp);
+        return input.put("bootId",testBoot).put("sequenceNumber", sequence).put("recordedAt", timestamp);
     }
     ObjectNode sample(int sequence) { return sample(sequence, "2026-09-10T12:30:00Z"); }
     String batch(JsonNode... readings) {
@@ -62,6 +69,7 @@ class TelemetryApiTests {
         assertThat(response.statusCode()).isEqualTo(200);
         assertThat(body(response).get("accepted").intValue()).isEqualTo(2);
         assertThat(count()).isEqualTo(2);
+        assertThat(jdbc.queryForObject("select count(*) from trip_work_item", Integer.class)).isEqualTo(2);
         assertThat(latest().get("sequenceNumber").intValue()).isEqualTo(2);
         post(batch(sample(3, "2026-09-10T12:29:00Z")));
         assertThat(latest().get("sequenceNumber").intValue()).isEqualTo(2);
@@ -75,6 +83,24 @@ class TelemetryApiTests {
         assertThat(conflict.get("results").get(0).get("code").stringValue()).isEqualTo("IDENTITY_CONFLICT");
         assertThat(latest().get("rpm").doubleValue()).isEqualTo(1900);
         assertThat(count()).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select count(*) from trip_work_item", Integer.class)).isEqualTo(1);
+    }
+
+    @Test void retainedIdentityMixedBatchDoesNotResurrectRemovedRawFixture() throws Exception {
+        assertThat(body(post(batch(sample(1)))).get("accepted").intValue()).isEqualTo(1);
+        var identity=jdbc.queryForMap("select * from telemetry_replay_identity where boot_id=?::uuid",testBoot);
+        // This disposable, unprojected fixture is not an operational retention job.
+        jdbc.update("delete from trip_work_item"); jdbc.update("delete from telemetry_reading");
+        var response=post(batch(sample(1),sample(1).put("rpm",999),sample(2)));
+        assertThat(response.statusCode()).isEqualTo(200);
+        var result=body(response);
+        assertThat(result.get("accepted").intValue()).isEqualTo(1);
+        assertThat(result.get("duplicate").intValue()).isEqualTo(1);
+        assertThat(result.get("rejected").intValue()).isEqualTo(1);
+        assertThat(result.get("results").get(1).get("code").stringValue()).isEqualTo("IDENTITY_CONFLICT");
+        assertThat(count()).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select sequence_number::int from telemetry_reading",Integer.class)).isEqualTo(2);
+        assertThat(jdbc.queryForMap("select * from telemetry_replay_identity where boot_id=?::uuid and sequence_number=1",testBoot)).isEqualTo(identity);
     }
 
     @Test void mixedBatchAcknowledgesEachOriginalIndex() throws Exception {
@@ -141,6 +167,7 @@ class TelemetryApiTests {
             var response = post(batch(sample(1), sample(99)));
             assertThat(response.statusCode()).isEqualTo(503);
             assertThat(count()).isZero();
+            assertThat(jdbc.queryForObject("select count(*) from trip_work_item", Integer.class)).isZero();
         } finally {
             jdbc.execute("DROP TRIGGER test_fail_trigger ON telemetry_reading");
             jdbc.execute("DROP FUNCTION test_fail()");

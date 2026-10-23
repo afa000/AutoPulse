@@ -13,11 +13,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestPropertySource(properties = "spring.flyway.locations=classpath:db/migration,classpath:db/local")
 class AutoPulseApplicationTests {
 	@Autowired JdbcTemplate jdbc;
+	@Autowired org.springframework.context.ApplicationContext context;
 
 	@Test
 	void contextLoads() {
 		assertThat(jdbc.queryForObject("select count(*) from vehicle", Integer.class)).isEqualTo(2);
 		assertThat(jdbc.queryForObject("select count(*) from telemetry_reading", Integer.class)).isZero();
+		assertThat(context.getBeansOfType(dev.autopulse.trip.TripProcessingSchedule.class)).isEmpty();
 	}
 
 }

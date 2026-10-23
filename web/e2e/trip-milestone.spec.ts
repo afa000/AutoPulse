@@ -1,0 +1,133 @@
+import { test, expect } from '@playwright/test'
+import AxeBuilder from '@axe-core/playwright'
+import { execFileSync } from 'node:child_process'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
+// No page.route/fulfill: every application response comes from real Java/Postgres.
+test('real Python trips survive restart, replay, retention and accessible desktop/narrow browsing', async ({ page, context }, info) => {
+  test.setTimeout(180_000)
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  const response = await page.request.get('/api/v1/vehicles/venue-2021/trips?limit=20')
+  expect(response.ok()).toBe(true)
+  const list = await response.json()
+  expect(list.items).toHaveLength(1)
+  const trip = list.items[0]
+  expect(trip).toMatchObject({ sampleCount: 241, startedAt: '2026-10-20T12:00:10Z', endedAt: '2026-10-20T12:08:10Z',
+    completionReason: 'ENGINE_OFF', finalization: 'FINAL', source: 'SIMULATED' })
+  expect(trip.metrics.rpm.sum).toBe(506050)
+  expect(trip.metrics.mafGps).toEqual({ count: 0, sum: null, min: null, max: null })
+  expect(trip.distance.kilometres.numerator / trip.distance.kilometres.denominator).toBe(6.5)
+  await page.goto('/#/trips')
+  await expect(page.getByRole('link', { name: /Trip starting/ })).toHaveCount(1)
+  await expect(page.getByText('6.5 km', { exact: true })).toBeVisible()
+  await page.screenshot({ path: info.outputPath('real-trip-list-desktop.png'), fullPage: true })
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  const open = page.getByRole('link', { name: /Trip starting/ })
+  await open.focus(); await page.keyboard.press('Enter')
+  await expect(page).toHaveURL(new RegExp(`#/trips/${trip.tripId}$`))
+  await expect(page.getByText('sim-device-001 / 241', { exact: true })).toBeVisible()
+  await expect(page.locator('.trip-facts').getByText(/^6\.5 km/)).toBeVisible()
+  const charts = page.getByRole('region', { name: 'Trip measurement charts' })
+  await expect(charts.locator('.history-plot')).toHaveCount(4)
+  await expect(charts.getByText('200 displayed raw readings. More points are available; continue paging.')).toBeVisible()
+  await page.screenshot({ path: info.outputPath('real-trip-detail-desktop.png'), fullPage: true })
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await charts.getByRole('button', { name: 'Next history page' }).click()
+  await expect(charts.getByText('41 displayed raw readings. No further page in this window.')).toBeVisible()
+  await charts.getByText('Measurement values and sample coverage (accessible table)').click()
+  await expect(charts.getByRole('table')).toContainText('2026-10-20T12:08:10Z')
+  await expect(charts.getByRole('table')).toContainText('Unavailable')
+
+  const query = new URLSearchParams({ from: trip.startedAt, to: '2026-10-20T12:08:10.000001Z', tripId: trip.tripId, resolution: '1m', limit: '200' })
+  const aggregatePath = `/api/v1/vehicles/venue-2021/telemetry/history?${query}`
+  const aggregateBefore = await (await page.request.get(aggregatePath)).json()
+  expect(aggregateBefore.points.reduce((n: number, p: { sampleCount: number }) => n + p.sampleCount, 0)).toBe(241)
+  expect(aggregateBefore.points.reduce((n: number, p: { metrics: { rpm: { sum: number } } }) => n + p.metrics.rpm.sum, 0)).toBe(506050)
+  await charts.getByLabel('History resolution').selectOption('1m')
+  await expect(charts.locator('figcaption').first()).toContainText('1m bucket means')
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(page.locator('body')).toHaveJSProperty('scrollWidth', 390)
+  const statistics = page.getByRole('region', { name: 'Sensor statistics table, horizontally scrollable' })
+  await statistics.focus(); await page.keyboard.press('ArrowRight')
+  await expect.poll(() => statistics.evaluate(e => e.scrollLeft)).toBeGreaterThan(0)
+  await statistics.evaluate(e => { e.scrollLeft = 0 })
+  await page.screenshot({ path: info.outputPath('real-trip-detail-narrow.png'), fullPage: true })
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+
+  // Isolation and precision are checked against the same real server as the UI.
+  expect((await (await page.request.get('/api/v1/vehicles/empty-vehicle/trips')).json()).items).toEqual([])
+  expect((await page.request.get(`/api/v1/vehicles/empty-vehicle/trips/${trip.tripId}`)).status()).toBe(404)
+  const tied = new URLSearchParams({ from: '2026-10-20T12:00:00Z', to: '2026-10-20T12:00:00.000001Z', resolution: 'raw', limit: '1' })
+  const tiePath = `/api/v1/vehicles/tie-vehicle/telemetry/history?${tied}`
+  const tieFirst = await (await page.request.get(tiePath)).json()
+  const tieSecond = await (await page.request.get(`${tiePath}&cursor=${tieFirst.nextCursor}`)).json()
+  expect(tieFirst.points).toHaveLength(1); expect(tieSecond.points).toHaveLength(1)
+  expect(tieFirst.points[0].reading.recordedAt).toBe(tieSecond.points[0].reading.recordedAt)
+  expect(tieFirst.points[0].reading.bootId).not.toBe(tieSecond.points[0].reading.bootId)
+  expect(tieSecond.nextCursor).toBeNull()
+  const exclusive = await page.request.get('/api/v1/vehicles/tie-vehicle/telemetry/history?from=2026-10-20T11:59:59Z&to=2026-10-20T12:00:00Z')
+  expect((await exclusive.json()).points).toEqual([])
+
+  // Live updates arrive while Java continuously projects this independent vehicle.
+  const live = await context.newPage(); await live.goto('/?vehicle=live-vehicle')
+  await expect(live.getByTestId('connection')).toContainText('live')
+  await expect(live.getByText('No readings yet')).toBeVisible()
+  const python = process.env.AUTOPULSE_PYTHON ?? 'python'
+  const delivery = execFileSync(python, ['-m', 'autopulse_agent.send', '--server-url', process.env.AUTOPULSE_BACKEND_URL!,
+    '--device-id', 'sim-live-vehicle', '--vehicle-id', 'live-vehicle', '--start-at', new Date(Date.now() - 4000).toISOString(),
+    '--interval', '0.01', '--batch-size', '1'], { cwd: resolve('..'), encoding: 'utf8', timeout: 20_000 })
+  expect(JSON.parse(delivery).accepted).toBe(3)
+  await expect(live.getByTestId('metric-0')).toContainText('2,000')
+  await expect(live.getByTestId('source')).toHaveText('SIMULATED')
+  await live.clock.install(); await live.clock.fastForward(8000)
+  await expect(live.getByTestId('freshness')).toHaveText('Stale measurement')
+  const network = process.env.AUTOPULSE_NETWORK_CONTROL!
+  writeFileSync(network, 'offline')
+  await expect.poll(() => existsSync(`${network}.ack`) ? readFileSync(`${network}.ack`, 'utf8') : '').toBe('offline')
+  await expect(live.getByTestId('connection')).toContainText('reconnecting', { timeout: 20_000 })
+  await expect(live.getByTestId('metric-0')).toContainText('2,000')
+  writeFileSync(network, 'online')
+  await expect.poll(() => readFileSync(`${network}.ack`, 'utf8')).toBe('online')
+  await live.clock.runFor(4000)
+  await expect(live.getByTestId('connection')).toContainText('live', { timeout: 20_000 })
+  await expect(live.getByTestId('metric-0')).toContainText('2,000')
+  await live.close()
+
+  // Test-only file IPC asks JUnit to run the real bounded maintenance service.
+  const control = process.env.AUTOPULSE_TRIP_CONTROL!
+  writeFileSync(control, 'prune')
+  await expect.poll(() => existsSync(`${control}.ack`) ? readFileSync(`${control}.ack`, 'utf8') : '', { timeout: 60_000 }).toBe('pruned')
+  const aggregateAfter = await (await page.request.get(aggregatePath)).json()
+  expect(aggregateAfter.points).toEqual(aggregateBefore.points)
+  expect(aggregateAfter.availability.rawState).toBe('EXPIRED')
+  expect(aggregateAfter.generation).not.toBe(aggregateBefore.generation)
+  const afterTrip = await (await page.request.get(`/api/v1/vehicles/venue-2021/trips/${trip.tripId}`)).json()
+  expect(afterTrip).toEqual(trip)
+  await page.getByRole('button', { name: 'Refresh trip' }).click()
+  await expect(charts.getByText(/Raw history is expired/)).toBeVisible()
+  await charts.getByLabel('History resolution').selectOption('raw')
+  await expect(charts.getByText(/not proof of no drive/)).toBeVisible()
+  await expect(charts.locator('.history-plot')).toHaveCount(0)
+  await page.screenshot({ path: info.outputPath('real-expired-raw-narrow.png'), fullPage: true })
+  await charts.getByLabel('History resolution').selectOption('5m')
+  await expect(charts.locator('.history-plot')).toHaveCount(4)
+  await expect(page.locator('.trip-facts').getByText(/^6\.5 km/)).toBeVisible()
+  await page.screenshot({ path: info.outputPath('real-retained-aggregate-narrow.png'), fullPage: true })
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await page.getByRole('link', { name: '← Back to Trips' }).click()
+  await expect(page.getByRole('link', { name: /Trip starting/ })).toHaveCount(1)
+  await expect(page.locator('body')).toHaveJSProperty('scrollWidth', 390)
+  await page.screenshot({ path: info.outputPath('real-trip-list-narrow.png'), fullPage: true })
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await page.goto('/?vehicle=empty-vehicle#/trips')
+  await expect(page.getByText('No saved trips on this page')).toBeVisible()
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await page.goto('/#/trips/00000000-0000-4000-8000-000000000000')
+  await expect(page.getByRole('alert')).toBeVisible()
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  expect(errors).toEqual([])
+  console.log('REAL_TRIP_BROWSER: desktop+narrow axes=0 keyboard=true rawPages=200+41 ties=2 isolated=true expiredRaw=true aggregatesUnchanged=true liveReconnect=true')
+})

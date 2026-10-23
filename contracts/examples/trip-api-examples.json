@@ -1,0 +1,391 @@
+{
+  "detail": {
+    "tripId": "30000000-0000-4000-8000-000000000001",
+    "vehicleId": "venue-2021",
+    "primaryDeviceId": "sim-device-001",
+    "source": "SIMULATED",
+    "startedAt": "2026-10-20T12:00:02Z",
+    "endedAt": "2026-10-20T12:00:08Z",
+    "observedThrough": "2026-10-20T12:00:08Z",
+    "confirmedAt": "2026-10-20T12:00:10Z",
+    "status": "COMPLETED",
+    "completionReason": "ENGINE_OFF",
+    "algorithmVersion": "trip-v1-draft",
+    "revision": 1,
+    "finalization": "PROVISIONAL",
+    "sampleCount": 4,
+    "metrics": {
+      "rpm": {
+        "count": 4,
+        "sum": 4000,
+        "min": 0,
+        "max": 2000
+      },
+      "speedKph": {
+        "count": 4,
+        "sum": 72,
+        "min": 0,
+        "max": 36
+      },
+      "coolantTempC": {
+        "count": 3,
+        "sum": 110,
+        "min": 20,
+        "max": 50
+      },
+      "engineLoadPct": {
+        "count": 2,
+        "sum": 30,
+        "min": 10,
+        "max": 20
+      },
+      "throttlePositionPct": {
+        "count": 0,
+        "sum": null,
+        "min": null,
+        "max": null
+      },
+      "intakeTempC": {
+        "count": 0,
+        "sum": null,
+        "min": null,
+        "max": null
+      },
+      "mafGps": {
+        "count": 0,
+        "sum": null,
+        "min": null,
+        "max": null
+      },
+      "fuelLevelPct": {
+        "count": 0,
+        "sum": null,
+        "min": null,
+        "max": null
+      },
+      "controlModuleVoltageV": {
+        "count": 0,
+        "sum": null,
+        "min": null,
+        "max": null
+      }
+    },
+    "distance": {
+      "estimated": true,
+      "kilometres": {
+        "numerator": 144,
+        "denominator": 3600
+      },
+      "coveredSeconds": 6,
+      "durationSeconds": 6
+    },
+    "quality": [],
+    "supersededBy": []
+  },
+  "list": {
+    "items": [
+      {
+        "tripId": "30000000-0000-4000-8000-000000000001",
+        "vehicleId": "venue-2021",
+        "primaryDeviceId": "sim-device-001",
+        "source": "SIMULATED",
+        "startedAt": "2026-10-20T12:00:02Z",
+        "endedAt": "2026-10-20T12:00:08Z",
+        "observedThrough": "2026-10-20T12:00:08Z",
+        "confirmedAt": "2026-10-20T12:00:10Z",
+        "status": "COMPLETED",
+        "completionReason": "ENGINE_OFF",
+        "algorithmVersion": "trip-v1-draft",
+        "revision": 1,
+        "finalization": "PROVISIONAL",
+        "sampleCount": 4,
+        "metrics": {
+          "rpm": {
+            "count": 4,
+            "sum": 4000,
+            "min": 0,
+            "max": 2000
+          },
+          "speedKph": {
+            "count": 4,
+            "sum": 72,
+            "min": 0,
+            "max": 36
+          },
+          "coolantTempC": {
+            "count": 3,
+            "sum": 110,
+            "min": 20,
+            "max": 50
+          },
+          "engineLoadPct": {
+            "count": 2,
+            "sum": 30,
+            "min": 10,
+            "max": 20
+          },
+          "throttlePositionPct": {
+            "count": 0,
+            "sum": null,
+            "min": null,
+            "max": null
+          },
+          "intakeTempC": {
+            "count": 0,
+            "sum": null,
+            "min": null,
+            "max": null
+          },
+          "mafGps": {
+            "count": 0,
+            "sum": null,
+            "min": null,
+            "max": null
+          },
+          "fuelLevelPct": {
+            "count": 0,
+            "sum": null,
+            "min": null,
+            "max": null
+          },
+          "controlModuleVoltageV": {
+            "count": 0,
+            "sum": null,
+            "min": null,
+            "max": null
+          }
+        },
+        "distance": {
+          "estimated": true,
+          "kilometres": {
+            "numerator": 144,
+            "denominator": 3600
+          },
+          "coveredSeconds": 6,
+          "durationSeconds": 6
+        },
+        "quality": [],
+        "supersededBy": []
+      }
+    ],
+    "nextCursor": null,
+    "generation": "1"
+  },
+  "emptyList": {
+    "items": [],
+    "nextCursor": null,
+    "generation": "1"
+  },
+  "historyRaw": {
+    "from": "2026-10-20T12:00:02Z",
+    "to": "2026-10-20T12:00:08Z",
+    "resolution": "raw",
+    "points": [
+      {
+        "kind": "raw",
+        "reading": {
+          "deviceId": "sim-device-001",
+          "vehicleId": "venue-2021",
+          "bootId": "123e4567-e89b-42d3-a456-426614174000",
+          "recordedAt": "2026-10-20T12:00:02Z",
+          "sequenceNumber": 1,
+          "source": "SIMULATED",
+          "rpm": 1000,
+          "speedKph": 0,
+          "coolantTempC": 20,
+          "engineLoadPct": 10,
+          "throttlePositionPct": null,
+          "intakeTempC": null,
+          "mafGps": null,
+          "fuelLevelPct": null,
+          "controlModuleVoltageV": null,
+          "milOn": null
+        },
+        "receivedAt": "2026-10-20T12:00:11Z"
+      },
+      {
+        "kind": "raw",
+        "reading": {
+          "deviceId": "sim-device-001",
+          "vehicleId": "venue-2021",
+          "bootId": "123e4567-e89b-42d3-a456-426614174000",
+          "recordedAt": "2026-10-20T12:00:04Z",
+          "sequenceNumber": 2,
+          "source": "SIMULATED",
+          "rpm": 2000,
+          "speedKph": 36,
+          "coolantTempC": null,
+          "engineLoadPct": 20,
+          "throttlePositionPct": null,
+          "intakeTempC": null,
+          "mafGps": null,
+          "fuelLevelPct": null,
+          "controlModuleVoltageV": null,
+          "milOn": null
+        },
+        "receivedAt": "2026-10-20T12:00:11Z"
+      },
+      {
+        "kind": "raw",
+        "reading": {
+          "deviceId": "sim-device-001",
+          "vehicleId": "venue-2021",
+          "bootId": "123e4567-e89b-42d3-a456-426614174000",
+          "recordedAt": "2026-10-20T12:00:06Z",
+          "sequenceNumber": 3,
+          "source": "SIMULATED",
+          "rpm": 1000,
+          "speedKph": 36,
+          "coolantTempC": 40,
+          "engineLoadPct": null,
+          "throttlePositionPct": null,
+          "intakeTempC": null,
+          "mafGps": null,
+          "fuelLevelPct": null,
+          "controlModuleVoltageV": null,
+          "milOn": null
+        },
+        "receivedAt": "2026-10-20T12:00:11Z"
+      }
+    ],
+    "nextCursor": null,
+    "generation": "1",
+    "availability": {
+      "rawState": "AVAILABLE",
+      "rawUnavailableBefore": null,
+      "availableResolutions": [
+        "raw",
+        "1m",
+        "5m"
+      ],
+      "incomplete": false
+    }
+  },
+  "historyAggregate": {
+    "from": "2026-10-20T12:00:02Z",
+    "to": "2026-10-20T12:00:08Z",
+    "resolution": "1m",
+    "points": [
+      {
+        "kind": "aggregate",
+        "sources": ["SIMULATED"],
+        "deviceCount": 1,
+        "firstObservedAt": "2026-10-20T12:00:02Z",
+        "lastObservedAt": "2026-10-20T12:00:06Z",
+        "bucketStart": "2026-10-20T12:00:02Z",
+        "bucketEnd": "2026-10-20T12:00:08Z",
+        "partial": true,
+        "sampleCount": 3,
+        "metrics": {
+          "rpm": {
+            "count": 3,
+            "sum": 4000,
+            "min": 1000,
+            "max": 2000
+          },
+          "speedKph": {
+            "count": 3,
+            "sum": 72,
+            "min": 0,
+            "max": 36
+          },
+          "coolantTempC": {
+            "count": 2,
+            "sum": 60,
+            "min": 20,
+            "max": 40
+          },
+          "engineLoadPct": {
+            "count": 2,
+            "sum": 30,
+            "min": 10,
+            "max": 20
+          },
+          "throttlePositionPct": {
+            "count": 0,
+            "sum": null,
+            "min": null,
+            "max": null
+          },
+          "intakeTempC": {
+            "count": 0,
+            "sum": null,
+            "min": null,
+            "max": null
+          },
+          "mafGps": {
+            "count": 0,
+            "sum": null,
+            "min": null,
+            "max": null
+          },
+          "fuelLevelPct": {
+            "count": 0,
+            "sum": null,
+            "min": null,
+            "max": null
+          },
+          "controlModuleVoltageV": {
+            "count": 0,
+            "sum": null,
+            "min": null,
+            "max": null
+          }
+        }
+      }
+    ],
+    "nextCursor": null,
+    "generation": "1",
+    "availability": {
+      "rawState": "AVAILABLE",
+      "rawUnavailableBefore": null,
+      "availableResolutions": [
+        "raw",
+        "1m",
+        "5m"
+      ],
+      "incomplete": false
+    }
+  },
+  "historyEmpty": {
+    "from": "2026-10-20T12:00:02Z",
+    "to": "2026-10-20T12:00:08Z",
+    "resolution": "raw",
+    "points": [],
+    "nextCursor": null,
+    "generation": "1",
+    "availability": {
+      "rawState": "AVAILABLE",
+      "rawUnavailableBefore": null,
+      "availableResolutions": [
+        "raw",
+        "1m",
+        "5m"
+      ],
+      "incomplete": false
+    }
+  },
+  "historyExpired": {
+    "from": "2026-10-20T12:00:02Z",
+    "to": "2026-10-20T12:00:08Z",
+    "resolution": "raw",
+    "points": [],
+    "nextCursor": null,
+    "generation": "1",
+    "availability": {
+      "rawState": "EXPIRED",
+      "rawUnavailableBefore": "2026-10-20T12:01:00Z",
+      "availableResolutions": [
+        "1m",
+        "5m"
+      ],
+      "incomplete": true
+    }
+  },
+  "pageChanged": {
+    "code": "PAGE_CHANGED",
+    "message": "History changed; restart pagination",
+    "correlationId": "40000000-0000-4000-8000-000000000001",
+    "fieldErrors": []
+  }
+}

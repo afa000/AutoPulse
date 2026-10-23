@@ -37,9 +37,9 @@ try {
             else { & bash ./mvnw --batch-mode test }
             if ($LASTEXITCODE -ne 0) { throw 'Java/PostgreSQL verification failed.' }
             if ($Browser) {
-                if ($onWindows) { & .\mvnw.cmd --batch-mode test '-Dtest=DashboardBrowserDemo' "-Dautopulse.python=$Python" }
-                else { & bash ./mvnw --batch-mode test '-Dtest=DashboardBrowserDemo' "-Dautopulse.python=$Python" }
-                if ($LASTEXITCODE -ne 0) { throw 'Isolated browser verification failed. See server/target/dashboard-browser.log and Surefire reports. If Chromium is missing, run npm exec -- playwright install chromium in web/.' }
+                if ($onWindows) { & .\mvnw.cmd --batch-mode test '-Dtest=DashboardBrowserDemo,TripMilestoneDemo' "-Dautopulse.python=$Python" }
+                else { & bash ./mvnw --batch-mode test '-Dtest=DashboardBrowserDemo,TripMilestoneDemo' "-Dautopulse.python=$Python" }
+                if ($LASTEXITCODE -ne 0) { throw 'Isolated browser verification failed. See server/target/dashboard-browser.log, server/target/trip-milestone-browser.log and Surefire reports. If Chromium is missing, run npm exec -- playwright install chromium in web/.' }
             }
         } finally { Pop-Location }
         Push-Location web

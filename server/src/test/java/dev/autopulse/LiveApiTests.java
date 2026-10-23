@@ -36,11 +36,17 @@ class LiveApiTests {
     @Autowired IngestionService ingestion;
     @Autowired PlatformTransactionManager transactions;
     final HttpClient http = HttpClient.newHttpClient();
-    @BeforeEach void clean() { jdbc.update("delete from telemetry_reading"); }
+    String testBoot;
+    @BeforeEach void clean() {
+        // Keep accepted ledger identities intact across raw-only fixture resets.
+        testBoot=UUID.randomUUID().toString();
+        jdbc.update("delete from trip_work_item");
+        jdbc.update("delete from telemetry_reading");
+    }
 
     ObjectNode sample(int sequence) {
         return ((ObjectNode) mapper.readTree(Path.of("../contracts/examples/telemetry-sample.json").toFile()))
-                .put("sequenceNumber", sequence);
+                .put("bootId",testBoot).put("sequenceNumber", sequence);
     }
     void ingest(ObjectNode sample) { ingestion.ingest(mapper.createArrayNode().add(sample), UUID.randomUUID()); }
     URI uri(String vehicle) { return URI.create("http://127.0.0.1:" + port + "/api/v1/vehicles/" + vehicle + "/live"); }

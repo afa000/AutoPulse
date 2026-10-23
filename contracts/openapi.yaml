@@ -5,6 +5,145 @@ info:
   version: 0.1.0
 
 paths:
+  /api/v1/vehicles/{vehicleId}/trips:
+    get:
+      operationId: listTrips
+      x-implementation-status: implemented
+      summary: Bounded persisted trip list
+      description: >-
+        Default includes active/provisional, excludes
+        superseded. Descending startedAt then trip UUID. Cursors bind vehicle,
+        limit and generation; mutations between pages return 409 PAGE_CHANGED.
+      parameters:
+        - {$ref: '#/components/parameters/VehicleId'}
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+        - {$ref: '#/components/parameters/Cursor'}
+      responses:
+        '200':
+          description: Known vehicle, possibly empty items. Follow nextCursor; not an immutable snapshot.
+          headers:
+            X-Trip-Data-Generation:
+              description: Snapshot generation; compare exactly with history generation before combining summary and charts.
+              schema: {type: string, pattern: '^[0-9]+$', maxLength: 20}
+            X-Trip-Processing-State:
+              description: CURRENT, PENDING or REVIEW; queued/unapplied input must not be described as complete history.
+              schema: {type: string, enum: [CURRENT, PENDING, REVIEW]}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TripPage'}
+        '400': {$ref: '#/components/responses/QueryInvalid'}
+        '404': {$ref: '#/components/responses/HistoryNotFound'}
+        '409': {$ref: '#/components/responses/PageChanged'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /api/v1/vehicles/{vehicleId}/trips/{tripId}:
+    get:
+      operationId: tripDetail
+      x-implementation-status: implemented
+      summary: Vehicle-scoped persisted trip detail
+      description: >-
+        Unknown/wrong-vehicle trip is UNKNOWN_TRIP, never returned
+        through another vehicle. Refresh on navigation/manual refresh and compare
+        revision. Superseded references keep links; provisional values can change.
+      parameters:
+        - {$ref: '#/components/parameters/VehicleId'}
+        - name: tripId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Trip evidence and exact sample-weighted summary fractions, not a vehicle odometer.
+          headers:
+            X-Trip-Data-Generation:
+              description: Snapshot generation; compare exactly with history generation before combining summary and charts.
+              schema: {type: string, pattern: '^[0-9]+$', maxLength: 20}
+            X-Trip-Processing-State:
+              schema: {type: string, enum: [CURRENT, PENDING, REVIEW]}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Trip'}
+        '400': {$ref: '#/components/responses/QueryInvalid'}
+        '404': {$ref: '#/components/responses/HistoryNotFound'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /api/v1/vehicles/{vehicleId}/telemetry/history:
+    get:
+      operationId: telemetryHistory
+      x-implementation-status: implemented
+      x-supported-resolutions: [raw, 1m, 5m]
+      summary: Half-open raw or UTC-bucketed telemetry history
+      description: >-
+        Raw history and 1m/5m aggregation are served. Required from < to,
+        UTC half-open [from,to), at most six
+        fractional digits. Raw range <=24h; aggregated <=31 days. Ascending raw
+        timestamp/device UUID/boot UUID/sequence tuple with microsecond precision;
+        UTC-aligned aggregate buckets clipped at range edges, with partial flag.
+        Nulls/absent buckets are never zero-filled. Cursors bind vehicle, tripId,
+        normalized range/resolution/limit and generation; expire after 15 minutes.
+        Accepted inserts, reconciliation or retention invalidate continuation with
+        409 PAGE_CHANGED; restart paging. Raw expiration is explicit availability,
+        never an unexplained empty result. Explicit opt-in final-only retention
+        atomically records expiry and advances generation. No silent truncation:
+        follow nextCursor. Superseded trip filters return 409 PAGE_CHANGED; inspect
+        trip-detail replacement links. Availability incomplete conservatively
+        flags pending/review projection; AVAILABLE does not certify complete
+        hardware capture or non-null sensor coverage. Aggregate pages span at most
+        limit consecutive UTC buckets starting at the next observed bucket; empty
+        buckets are omitted, not interpolated. Numeric work is capped at 100000
+        matching readings per page with a 10-second transaction timeout. An opt-in,
+        disabled-by-default ownership-aware unfiltered aggregate reader instead
+        caps combined raw/ledger metadata candidates at 10000 before membership
+        filtering; mirrors consume two physical candidates but enter statistics
+        once. Verified full UTC trip contributions can supply stored exact totals;
+        clipped archive edges and raw-owned inputs are calculated from their exact
+        subsets. Membership/equality checks and metadata caps still apply. Raw and
+        trip-filtered queries retain the default reader. Its signed
+        bucket-boundary cursors cannot be interchanged with default-reader cursors;
+        restart paging when changing modes. Both modes report range/trip-scoped
+        raw expiry explicitly and preserve supported aggregates. Exceeding
+        the row cap returns 503 HISTORY_DENSITY_LIMIT with no partial summary;
+        reduce limit or narrow the range. Sources and deviceCount expose mixed
+        provenance; unfiltered aggregates include all raw ties/devices, not just
+        canonical trip evidence. The opt-in reader preserves that logical scope
+        through disjoint raw/verified-retained ownership. Ownership gaps or unequal
+        raw/archive evidence return explicit 503 errors, never partial success.
+        Per-sensor sample coverage is count/sampleCount,
+        never elapsed-time coverage. No distance is interpolated between buckets.
+      parameters:
+        - {$ref: '#/components/parameters/VehicleId'}
+        - name: from
+          in: query
+          required: true
+          schema: {$ref: '#/components/schemas/TelemetrySample/properties/recordedAt'}
+        - name: to
+          in: query
+          required: true
+          schema: {$ref: '#/components/schemas/TelemetrySample/properties/recordedAt'}
+        - name: resolution
+          in: query
+          description: Raw readings or 1-minute/5-minute UTC-aligned sample-weighted summaries.
+          schema: {type: string, enum: [raw, 1m, 5m], default: raw}
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 1000, default: 200}
+        - name: tripId
+          in: query
+          schema: {type: string, format: uuid}
+        - {$ref: '#/components/parameters/Cursor'}
+      responses:
+        '200':
+          description: Explicitly tagged raw/aggregate points, coverage and continuation; known empty returns [] points.
+          headers:
+            X-Trip-Processing-State:
+              schema: {type: string, enum: [CURRENT, PENDING, REVIEW]}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/HistoryPage'}
+        '400': {$ref: '#/components/responses/QueryInvalid'}
+        '404': {$ref: '#/components/responses/HistoryNotFound'}
+        '409': {$ref: '#/components/responses/PageChanged'}
+        '503': {$ref: '#/components/responses/Unavailable'}
   /api/v1/vehicles/{vehicleId}/live:
     get:
       operationId: liveTelemetry
@@ -89,7 +228,33 @@ paths:
         '503': {$ref: '#/components/responses/Unavailable'}
 
 components:
+  parameters:
+    VehicleId:
+      name: vehicleId
+      in: path
+      required: true
+      schema: {type: string, minLength: 1}
+    Cursor:
+      name: cursor
+      in: query
+      schema: {type: string, minLength: 1, maxLength: 2048}
+      description: Opaque HMAC-bound 15-minute cursor; restart invalidates it. Not a stable snapshot.
   responses:
+    QueryInvalid:
+      description: INVALID_QUERY or INVALID_CURSOR, including range/precision/limit/resolution/filter/cursor mismatch.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
+    HistoryNotFound:
+      description: UNKNOWN_VEHICLE or UNKNOWN_TRIP; wrong-vehicle trip is indistinguishable from unknown trip.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
+    PageChanged:
+      description: PAGE_CHANGED because data/projection/availability generation changed; restart from first page.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
     BadRequest:
       description: Malformed JSON or invalid envelope (INVALID_REQUEST). No items processed.
       content:
@@ -106,11 +271,153 @@ components:
         application/json:
           schema: {$ref: '#/components/schemas/ApiError'}
     Unavailable:
-      description: Retriable database/system failure (SERVICE_UNAVAILABLE). No success acknowledgment.
+      description: Database/system failure (SERVICE_UNAVAILABLE), PUBLICATION_PENDING during correction publication, HISTORY_DENSITY_LIMIT above the active reader's cap (100000 matching readings by default or 10000 combined metadata candidates for opt-in owned aggregates), or opt-in HISTORY_OWNERSHIP_GAP/HISTORY_OWNERSHIP_MISMATCH when raw/archive evidence is unavailable or disagrees. Reduce limit/range for density; investigate ownership errors. No success acknowledgment or partial summary.
       content:
         application/json:
           schema: {$ref: '#/components/schemas/ApiError'}
   schemas:
+    MetricStatistics:
+      type: object
+      required: [count, sum, min, max]
+      description: Exact decimal sum/non-null count defines the sample-weighted mean. Zero-count sum/min/max must be null.
+      properties:
+        count: {type: integer, minimum: 0}
+        sum: {type: number, nullable: true}
+        min: {type: number, nullable: true}
+        max: {type: number, nullable: true}
+    MetricStatisticsSet:
+      type: object
+      required: [rpm, speedKph, coolantTempC, engineLoadPct, throttlePositionPct, intakeTempC, mafGps, fuelLevelPct, controlModuleVoltageV]
+      additionalProperties: false
+      properties:
+        rpm: {$ref: '#/components/schemas/MetricStatistics'}
+        speedKph: {$ref: '#/components/schemas/MetricStatistics'}
+        coolantTempC: {$ref: '#/components/schemas/MetricStatistics'}
+        engineLoadPct: {$ref: '#/components/schemas/MetricStatistics'}
+        throttlePositionPct: {$ref: '#/components/schemas/MetricStatistics'}
+        intakeTempC: {$ref: '#/components/schemas/MetricStatistics'}
+        mafGps: {$ref: '#/components/schemas/MetricStatistics'}
+        fuelLevelPct: {$ref: '#/components/schemas/MetricStatistics'}
+        controlModuleVoltageV: {$ref: '#/components/schemas/MetricStatistics'}
+    NullableDistanceRatio:
+      type: object
+      nullable: true
+      required: [numerator, denominator]
+      properties:
+        numerator: {type: number, minimum: 0}
+        denominator: {type: number, minimum: 0, exclusiveMinimum: true}
+      description: Exact kilometres numerator/denominator; null means no eligible speed coverage, not zero distance.
+    EstimatedDistance:
+      type: object
+      required: [estimated, kilometres, coveredSeconds, durationSeconds]
+      properties:
+        estimated: {type: boolean, enum: [true]}
+        kilometres: {$ref: '#/components/schemas/NullableDistanceRatio'}
+        coveredSeconds: {type: number, minimum: 0}
+        durationSeconds: {type: number, minimum: 0}
+      description: Trapezoidal speed estimate only, never odometer. Coverage is coveredSeconds/durationSeconds; missing/gap/restart intervals are excluded.
+    Trip:
+      type: object
+      required: [tripId, vehicleId, primaryDeviceId, source, startedAt, endedAt, observedThrough, confirmedAt, status, completionReason, algorithmVersion, revision, finalization, sampleCount, metrics, distance, quality, supersededBy]
+      properties:
+        tripId: {type: string, format: uuid}
+        vehicleId: {type: string, minLength: 1}
+        primaryDeviceId: {type: string, minLength: 1}
+        source: {type: string, enum: [SIMULATED, OBD]}
+        startedAt: {type: string, format: date-time}
+        endedAt: {type: string, format: date-time, nullable: true}
+        observedThrough: {type: string, format: date-time}
+        confirmedAt: {type: string, format: date-time, nullable: true}
+        status: {type: string, enum: [ACTIVE, COMPLETED, SUPERSEDED]}
+        completionReason: {type: string, nullable: true, enum: [ENGINE_OFF, SIGNAL_TIMEOUT, SOURCE_CHANGED, DURATION_LIMIT, null]}
+        algorithmVersion: {type: string, enum: [trip-v1-draft]}
+        revision: {type: integer, minimum: 1}
+        finalization: {type: string, enum: [PROVISIONAL, FINAL]}
+        sampleCount: {type: integer, minimum: 1}
+        metrics: {$ref: '#/components/schemas/MetricStatisticsSet'}
+        distance: {$ref: '#/components/schemas/EstimatedDistance'}
+        quality:
+          type: array
+          uniqueItems: true
+          items: {type: string}
+        supersededBy:
+          type: array
+          uniqueItems: true
+          items: {type: string, format: uuid}
+    TripPage:
+      type: object
+      required: [items, nextCursor, generation]
+      properties:
+        items:
+          type: array
+          maxItems: 100
+          items: {$ref: '#/components/schemas/Trip'}
+        nextCursor: {type: string, nullable: true, maxLength: 2048}
+        generation: {type: string, pattern: '^[0-9]+$', maxLength: 20}
+    RawHistoryPoint:
+      type: object
+      required: [kind, reading, receivedAt]
+      properties:
+        kind: {type: string, enum: [raw]}
+        reading: {$ref: '#/components/schemas/TelemetrySample'}
+        receivedAt: {type: string, format: date-time}
+    AggregateHistoryPoint:
+      type: object
+      required: [kind, bucketStart, bucketEnd, partial, sampleCount, metrics, sources, deviceCount, firstObservedAt, lastObservedAt]
+      description: >-
+        Bucket bounds are clipped only to the requested range; partial flags this
+        clipping, not sensor completeness or trip occupancy. Metrics use exact
+        sums/counts; mean=sum/count, sample coverage=count/sampleCount. Empty
+        buckets are absent. Mixed-source/device buckets must not be labeled as
+        homogeneous OBD or SIMULATED data. Trip filters use exact evidence.
+      properties:
+        kind: {type: string, enum: [aggregate]}
+        bucketStart: {type: string, format: date-time}
+        bucketEnd: {type: string, format: date-time}
+        partial: {type: boolean}
+        sampleCount: {type: integer, minimum: 1}
+        metrics: {$ref: '#/components/schemas/MetricStatisticsSet'}
+        sources:
+          type: array
+          minItems: 1
+          maxItems: 2
+          uniqueItems: true
+          items: {type: string, enum: [OBD, SIMULATED]}
+        deviceCount: {type: integer, minimum: 1}
+        firstObservedAt: {type: string, format: date-time}
+        lastObservedAt: {type: string, format: date-time}
+    HistoryAvailability:
+      type: object
+      required: [rawState, rawUnavailableBefore, availableResolutions, incomplete]
+      properties:
+        rawState: {type: string, enum: [AVAILABLE, PARTIALLY_EXPIRED, EXPIRED]}
+        rawUnavailableBefore:
+          type: string
+          format: date-time
+          nullable: true
+          description: Exclusive upper bound on expired observations in this requested window, not a contiguous vehicle-wide cutoff. Protected earlier raw observations may remain. Null when AVAILABLE.
+        availableResolutions:
+          type: array
+          uniqueItems: true
+          items: {type: string, enum: [raw, 1m, 5m]}
+        incomplete: {type: boolean}
+    HistoryPage:
+      type: object
+      required: [from, to, resolution, points, nextCursor, generation, availability]
+      properties:
+        from: {type: string, format: date-time}
+        to: {type: string, format: date-time}
+        resolution: {type: string, enum: [raw, 1m, 5m]}
+        points:
+          type: array
+          maxItems: 1000
+          items:
+            oneOf:
+              - {$ref: '#/components/schemas/RawHistoryPoint'}
+              - {$ref: '#/components/schemas/AggregateHistoryPoint'}
+        nextCursor: {type: string, nullable: true, maxLength: 2048}
+        generation: {type: string, pattern: '^[0-9]+$', maxLength: 20}
+        availability: {$ref: '#/components/schemas/HistoryAvailability'}
     LiveEmpty:
       type: object
       required: [vehicleId]

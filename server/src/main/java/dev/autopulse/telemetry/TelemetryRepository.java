@@ -41,9 +41,16 @@ public class TelemetryRepository {
                 on conflict (device_id,boot_id,sequence_number) do nothing
                 """, parameters);
         if (inserted == 1) return "accepted";
+        // Retained identity is authoritative, even if raw history no longer exists.
+        // Legacy rows not yet backfilled keep their original exact comparison.
         Boolean exact = jdbc.queryForObject("""
-                select payload=cast(:payload as jsonb) from telemetry_reading
-                where device_id=:device and boot_id=:boot and sequence_number=:sequence
+                select vehicle_id=:vehicle and payload=cast(:payload as jsonb) from (
+                    select vehicle_id,payload,0 as priority from telemetry_replay_identity
+                    where device_id=:device and boot_id=:boot and sequence_number=:sequence
+                    union all
+                    select vehicle_id,payload,1 as priority from telemetry_reading
+                    where device_id=:device and boot_id=:boot and sequence_number=:sequence
+                ) evidence order by priority limit 1
                 """, parameters, Boolean.class);
         return Boolean.TRUE.equals(exact) ? "duplicate" : "conflict";
     }
