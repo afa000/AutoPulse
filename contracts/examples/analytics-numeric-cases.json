@@ -1,0 +1,11 @@
+{
+  "description": "Synthetic arithmetic boundary cases, not realistic sensor measurements. Totals stay JSON numbers; expected display means are decimal strings for portable fixture comparison.",
+  "cases": [
+    {"name": "positive", "count": 27, "sum": 2.7e309, "expectedMean": "1e308"},
+    {"name": "negative", "count": 27, "sum": -2.7e309, "expectedMean": "-1e308"},
+    {"name": "cancellation", "count": 27, "sum": 1e308, "expectedMean": "3.7037037037037037e306"},
+    {"name": "zero", "count": 4, "sum": 0, "expectedMean": "0"},
+    {"name": "unavailable", "count": 0, "sum": null, "expectedMean": null}
+  ],
+  "distance": {"numerator": 5.2e309, "denominator": 3600, "expectedKilometres": "1.4444444444444444e306"}
+}

@@ -1,0 +1,117 @@
+{
+  "snapshot": {
+    "snapshotVersion": 1,
+    "deviceId": "sim-device-001",
+    "vehicleId": "venue-2021",
+    "bootId": "123e4567-e89b-42d3-a456-426614174000",
+    "diagnosticSequence": 0,
+    "capturedAt": "2026-10-22T12:00:00Z",
+    "source": "SIMULATED",
+    "ecus": [
+      {
+        "ecuId": "SIMULATOR",
+        "outcome": "COMPLETE",
+        "mil": {
+          "outcome": "COMPLETE",
+          "illuminated": false
+        },
+        "categories": [
+          {
+            "category": "PENDING",
+            "outcome": "COMPLETE",
+            "codes": []
+          },
+          {
+            "category": "CONFIRMED",
+            "outcome": "COMPLETE",
+            "codes": []
+          },
+          {
+            "category": "PERMANENT",
+            "outcome": "COMPLETE",
+            "codes": []
+          }
+        ]
+      }
+    ]
+  },
+  "acceptedReceipt": {
+    "snapshotId": "10000000-0000-4000-8000-000000000010",
+    "result": "ACCEPTED",
+    "receivedAt": "2026-10-22T12:00:01.000001Z"
+  },
+  "duplicateReceipt": {
+    "snapshotId": "10000000-0000-4000-8000-000000000010",
+    "result": "DUPLICATE",
+    "receivedAt": "2026-10-22T12:00:01.000001Z"
+  },
+  "eventDetail": {
+    "eventId": "20000000-0000-4000-8000-000000000001",
+    "vehicleId": "venue-2021",
+    "deviceId": "sim-device-001",
+    "source": "SIMULATED",
+    "ecuId": "SIMULATOR",
+    "category": "CONFIRMED",
+    "code": "P1999",
+    "observationState": "PRESENT",
+    "cycleNumber": 1,
+    "positiveObservationCount": 2,
+    "firstObservedAt": "2026-10-22T12:00:20Z",
+    "lastObservedAt": "2026-10-22T12:00:22Z",
+    "lastAppliedAt": "2026-10-22T12:00:22Z",
+    "currentReadOutcome": "COMPLETE",
+    "freshness": "FRESH",
+    "evidence": {
+      "firstSnapshotId": "10000000-0000-4000-8000-000000000010",
+      "lastPositiveSnapshotId": "10000000-0000-4000-8000-000000000012",
+      "lastAppliedSnapshotId": "10000000-0000-4000-8000-000000000012"
+    },
+    "definition": {
+      "verification": "UNKNOWN",
+      "description": null,
+      "sourceUrl": null,
+      "version": null
+    }
+  },
+  "eventList": {
+    "items": [
+      {
+        "eventId": "20000000-0000-4000-8000-000000000001",
+        "vehicleId": "venue-2021",
+        "deviceId": "sim-device-001",
+        "source": "SIMULATED",
+        "ecuId": "SIMULATOR",
+        "category": "CONFIRMED",
+        "code": "P1999",
+        "observationState": "PRESENT",
+        "cycleNumber": 1,
+        "positiveObservationCount": 2,
+        "firstObservedAt": "2026-10-22T12:00:20Z",
+        "lastObservedAt": "2026-10-22T12:00:22Z",
+        "lastAppliedAt": "2026-10-22T12:00:22Z",
+        "currentReadOutcome": "COMPLETE",
+        "freshness": "FRESH",
+        "evidence": {
+          "firstSnapshotId": "10000000-0000-4000-8000-000000000010",
+          "lastPositiveSnapshotId": "10000000-0000-4000-8000-000000000012",
+          "lastAppliedSnapshotId": "10000000-0000-4000-8000-000000000012"
+        },
+        "definition": {
+          "verification": "UNKNOWN",
+          "description": null,
+          "sourceUrl": null,
+          "version": null
+        }
+      }
+    ],
+    "nextCursor": null,
+    "generation": "1",
+    "processingState": "CURRENT"
+  },
+  "emptyList": {
+    "items": [],
+    "nextCursor": null,
+    "generation": "1",
+    "processingState": "CURRENT"
+  }
+}

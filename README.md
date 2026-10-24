@@ -1,124 +1,121 @@
 # AutoPulse
 
-AutoPulse is a read-only automotive telemetry project for a 2021 Hyundai Venue SE. A Raspberry Pi will collect supported OBD-II data through a Vgate vLinker FS USB adapter and send it to a web application for live monitoring, trip history, diagnostic information, and cautious maintenance recommendations.
+**Simulator-first automotive telemetry, trip analytics, and evidence-backed maintenance context.**
 
-The project is being developed simulator-first so the complete software pipeline can be built and tested before the vehicle hardware arrives.
+[![Verify telemetry pipeline](https://github.com/afa000/AutoPulse/actions/workflows/verify.yml/badge.svg)](https://github.com/afa000/AutoPulse/actions/workflows/verify.yml)
 
-## Planned architecture
+AutoPulse connects a Python vehicle simulator to a Spring Boot API, PostgreSQL, and a React/TypeScript dashboard. It handles duplicate delivery, delayed observations, missing sensors, and backend recovery without presenting incomplete data as vehicle health.
 
-```text
-Python device agent and vehicle simulator
-                |
-                | HTTPS/JSON
-                v
-Spring Boot backend
-                |
-                v
-PostgreSQL database
-                |
-                v
-React web application
-```
+**Status:** working local software prototype. Live telemetry, trips/history, diagnostics, and manual maintenance workflows are implemented and tested with simulated data. Physical OBD-II integration, durable edge buffering, authentication, and deployment remain planned.
 
-The Python agent will expose the same telemetry-source contract for both simulated data and the future physical OBD-II connection. This keeps the backend and frontend independent of the source selected at runtime.
+## Short demo
 
-## Simulator-first development
+![Captioned tour of AutoPulse's real simulator-backed interface](docs/demo/autopulse-demo.gif)
 
-The initial telemetry source will model coherent vehicle behavior such as starting from cold, idling, accelerating, cruising, stopping, and ending a trip. Deterministic scenarios will make development and automated testing possible without connecting to a car.
+[Watch/download the 36-second MP4](docs/demo/autopulse-demo.mp4) · [Transcript, provenance, and reproduction](docs/demo/README.md)
 
-Planned scenarios include:
+This captioned screen tour uses real captures from isolated browser demos, not a continuous driving recording. Telemetry and diagnostic observations are **SIMULATED**; service records are demonstration fixtures. No vehicle hardware is connected.
 
-- Normal commute
-- Overheating warning
-- Diagnostic trouble code with the malfunction indicator lamp on
-- Intermittent network connectivity
-- Unsupported OBD-II parameters
-- Duplicate and out-of-order telemetry
+## What works today
 
-## Safety boundary
+- **Live dashboard:** committed latest state over Server-Sent Events, reconnect behavior, explicit measurement age, and separate connection/freshness indicators. Missing values stay unavailable, not zero.
+- **Trips and history:** deterministic trip boundaries, estimated distance with coverage, sensor summaries, UTC charts, bounded paging, and explicit raw-expiry versus retained-aggregate availability.
+- **Diagnostic observations:** durable snapshots, scoped code cycles and recurrence, complete/partial/unsupported outcomes, and a small provenance-backed generic-code catalog with an unknown-definition fallback.
+- **Maintenance context:** manual service/odometer history, revisioned corrections, explicitly selected schedules, versioned evidence-backed advisories, and retry-safe form submissions.
+- **Reliability:** precise decimal wire data, idempotent ingestion and original receipts, durable backend work, restart/replay tests, and diagnostic retry ordering that prevents failed work being skipped.
 
-AutoPulse is strictly read-only. The device agent will use an explicit allowlist for supported telemetry discovery, live-data queries, VIN retrieval when available, and read-only diagnostic queries.
-
-It will not clear diagnostic codes, reset an ECU, perform coding or programming, run actuator tests, transmit arbitrary CAN messages, or issue commands with unknown effects. This boundary will be enforced in code and covered by automated tests.
-
-AutoPulse is informational. Its readings may be incomplete or delayed, and its recommendations are not a substitute for the owner's manual, official recall verification, or professional inspection. The dashboard is not intended for interaction while driving.
-
-## Repository layout
+## Architecture
 
 ```text
-device-agent/  Python agent, simulator, transport, and local buffering
-server/        Java and Spring Boot backend
-web/           React and TypeScript application
-contracts/     API schemas and shared payload examples
-infra/         Local infrastructure and deployment definitions
-docs/          Architecture decisions and technical documentation
-scripts/       Repeatable development workflows
+Python simulator / device-agent contracts
+               |
+               | bounded HTTP/JSON batches and diagnostic snapshots
+               v
+Java 21 / Spring Boot -- JDBC / Flyway --> PostgreSQL 17
+               |
+               | HTTP history + current-state SSE
+               v
+React / TypeScript / Vite dashboard
 ```
 
-## Current status
+Local development uses loopback HTTP. Authentication, TLS, production hosting, and a physical adapter are not implemented. SSE coalesces current state; it is not a durable event log. JSONL capture/replay is not a crash-safe device outbox.
 
-The repository is in Sprint 0: foundation and contracts. The immediate goals are to establish the project structure, development tooling, local PostgreSQL environment, initial telemetry contract, and test runners.
+## Try it without hardware
 
-No vehicle hardware is required during the simulator-based development phases.
+Prerequisites: Python 3.12+, Java 21, Docker Desktop/Engine, Node 24.15+ (24.x), and npm 11. The Maven wrapper is included.
 
-## Technology direction
+From the repository root in PowerShell:
 
-- Python 3.12+ for the device agent and simulator
-- Java 21 and Spring Boot for the backend
-- PostgreSQL with Flyway migrations for persistence
-- React and TypeScript for the web application
-- OpenAPI for HTTP contracts
-- Server-Sent Events for initial live browser updates
-- Docker Compose for local infrastructure
+```powershell
+py -3.12 -m venv device-agent/.venv
+./device-agent/.venv/Scripts/python.exe -m pip install -e "./device-agent[dev]"
+./device-agent/.venv/Scripts/python.exe -m autopulse_agent.simulate --scenario normal-commute
+```
 
-These choices represent the initial direction and may be refined through documented architecture decision records as the project develops.
+The preview is offline: no vehicle, server, or database needed.
 
-## Development principles
+For the web application, follow the [local development guide](docs/local-development.md). For an isolated end-to-end demonstration, install the frontend/browser prerequisites, then run:
 
-- Discover supported vehicle parameters instead of assuming availability.
-- Preserve missing telemetry as unavailable rather than displaying it as zero.
-- Use UTC internally and metric units for storage.
-- Make ingestion idempotent and tolerant of temporary network loss.
-- Keep transport models separate from persistence and domain logic.
-- Prefer explainable rules and evidence over unsupported diagnostic claims.
-- Add complexity only when a demonstrated requirement justifies it.
+```powershell
+Push-Location web
+npm ci
+npm exec -- playwright install chromium
+Pop-Location
+Push-Location server
+./mvnw.cmd test "-Dtest=CareMilestoneDemo" "-Dautopulse.python=../device-agent/.venv/Scripts/python.exe"
+Pop-Location
+```
 
-## Getting started
+Docker must be running. This demo creates its own PostgreSQL container and temporary capture, exercises the actual Python sender/backend/UI across a backend process restart, and cleans up afterward. Do not start Compose or use an existing development database for isolated tests. On Linux/macOS, use `bash ./mvnw` and an absolute path to the installed Python executable.
 
-The local PostgreSQL database runs through Docker Compose. Install and start Docker Desktop, then run the following commands from the project root in PowerShell.
+## Verification
 
-1. If you do not already have a `.env` file, copy the example configuration. Replace its placeholder password with a password for your local database. Keep `.env` private; it is ignored by Git.
+GitHub Actions tests Python 3.12 and 3.14, the backend against real disposable PostgreSQL, and the frontend plus integrated Chromium demos.
 
-   ```powershell
-   if (-not (Test-Path .env)) { Copy-Item .env.example .env }
-   ```
+Latest local verification on October 24, 2026:
 
-2. Check the Compose configuration, then start PostgreSQL.
+| Check | Result |
+| --- | --- |
+| Python 3.12 and 3.14 | 176 tests on each |
+| Java/PostgreSQL | 463 tests, including five diagnostic recovery regressions |
+| Frontend | 104 tests; typecheck, lint, and production build |
+| Care browser demonstrations | Three scenarios through the real API/database/UI |
 
-   ```powershell
-   docker compose config -q
-   docker compose up -d
-   ```
+Other integrated checks cover large/signed analytical totals, trip crash/replay/retention, and live reconnect behavior. The [verification record](docs/milestone-verification.md) contains commands, historical runs, and coverage boundaries. Counts are a snapshot, not a performance or production-readiness claim; the linked workflow is the source for hosted results.
 
-3. Check that the `db` service is running and accepts a query.
+Run all local gates after installing dependencies:
 
-   ```powershell
-   docker compose ps
-   docker compose exec db psql -U iamnetgo -d autopulse -c "SELECT 1;"
-   ```
+```powershell
+./scripts/verify.ps1 -Python ./device-agent/.venv/Scripts/python.exe -Browser
+```
 
-   The query should return one row containing `1`. Applications running on your computer can connect to the database at `localhost:5433` using the database name, user, and password from the Compose configuration.
+## Safety and limitations
 
-4. Stop the local database when you are finished.
+- **No ECU controls:** no code clearing, reset, coding, actuation, or arbitrary vehicle-command endpoints. The current source boundary is logical/read-only; physical adapter safety has not yet been validated.
+- **Not a diagnosis:** an observation does not prove a failed part, repair, or driving safety. Synthetic temperature thresholds are not Hyundai specifications.
+- **Manual maintenance context:** supported oil/filter rules carry manufacturer-document provenance and applicability conditions. Normal/severe usage is explicitly selected; missing history and stale inputs do not establish up-to-date service.
+- **Local/private application:** vehicle-scoped routes are not authentication. Do not expose the development servers to the internet.
+- **Conservative defaults:** trip, diagnostic, and maintenance workers are opt-in. Retention is off and dry-run is on; no automatic diagnostic/service deletion exists. Backend startup may apply migrations to its configured database.
+- **Not compact archival storage:** protected evidence and full canonical replay data remain. Raw cleanup is explicit, bounded, and guarded.
+- **Hardware is future work:** the intended Raspberry Pi + USB OBD-II path for a 2021 Hyundai Venue has not been tested on the vehicle.
 
-   ```powershell
-   docker compose down
-   ```
+## Repository guide
 
-The named Docker volume preserves database data between normal stops and starts. `docker compose down -v` also removes that volume and deletes the local database data, so use it only when you intend to start with an empty database.
+| Path | Purpose |
+| --- | --- |
+| `device-agent/` | Python simulator, source contracts, codecs, HTTP transport, capture/replay |
+| `server/` | Spring Boot API, persistence, trip/diagnostic/maintenance processing, migrations |
+| `web/` | React dashboard and browser tests |
+| `contracts/` | OpenAPI schemas and shared valid/invalid fixtures |
+| `docs/adr/` | Architecture decisions and evidence/precision policies |
+| `scripts/` | Verification and isolated demonstration helpers |
 
-Instructions for the device agent, backend, and web application will be added as those components are built.
+[Local setup](docs/local-development.md) · [API contract](contracts/openapi.yaml) · [Trip/retention operations](docs/trip-processing-operations.md) · [Maintenance operations](docs/maintenance-operations.md) · [Architecture decisions](docs/adr)
+
+## Next milestones
+
+Durable device buffering/reconnect recovery; read-only physical adapter validation; authentication/authorization and production deployment safeguards. These are not included in the current prototype.
 
 ## License
 
-No license has been selected yet.
+No project-wide license has been selected. Referenced manufacturer documents retain their own rights; catalog-specific notices do not license the whole repository.

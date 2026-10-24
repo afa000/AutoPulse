@@ -1,0 +1,15 @@
+{
+  "version":"us-2021-venue-g16-oil-v1",
+  "serviceType":"OIL_FILTER",
+  "applicability":"US_2021_VENUE_G16",
+  "manufacturer":"Hyundai Motor America",
+  "sourceTitle":"2021 Venue Owner's Manual, copyright 2020; Smartstream G1.6 p2-7, usage p8-7, oil table/footnote p8-8, severe p8-11",
+  "sourceUrl":"https://d2l2hpow37r9fd.cloudfront.net/wp-content/uploads/2023/11/22134208/2021-Hyundai-VenueOM.pdf#page=315",
+  "sourceHosting":"Third-party mirror of manufacturer-authored primary document; not a third-party schedule summary.",
+  "normal":{"MI":"8000","KM":"13000","months":12},
+  "severe":{"MI":"5000","KM":"8000","months":6},
+  "normalCondition":"Requires explicit owner confirmation of applicable oil specification; otherwise schedule remains UNKNOWN.",
+  "calendar":"Whichever distance or calendar interval occurs first; local date plusMonths clamps month-end.",
+  "rights":"Factual intervals and original AutoPulse explanations only; manufacturer PDF/text/tables are not redistributed or licensed by AutoPulse.",
+  "warning":"Informational schedule reminder, not a diagnosis, repair guarantee or safe-to-drive assessment. Confirm applicability with the owner's manual and a qualified professional."
+}

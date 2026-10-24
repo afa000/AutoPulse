@@ -1,0 +1,58 @@
+{
+  "readings": [
+    {
+      "deviceId": "sim-device-001",
+      "vehicleId": "venue-2021",
+      "bootId": "123e4567-e89b-12d3-a456-426614174000",
+      "recordedAt": "2026-09-10T12:30:00Z",
+      "sequenceNumber": 1,
+      "source": "SIMULATED",
+      "rpm": 1900,
+      "speedKph": 12,
+      "coolantTempC": 40,
+      "engineLoadPct": 20,
+      "throttlePositionPct": 23,
+      "intakeTempC": 33,
+      "milOn": false,
+      "mafGps": null,
+      "fuelLevelPct": 56,
+      "controlModuleVoltageV": null
+    },
+    {
+      "deviceId": "sim-device-001",
+      "vehicleId": "venue-2021",
+      "bootId": "123e4567-e89b-12d3-a456-426614174000",
+      "recordedAt": "2026-09-10T12:30:00Z",
+      "sequenceNumber": 1,
+      "source": "SIMULATED",
+      "rpm": 1900,
+      "speedKph": 12,
+      "coolantTempC": 40,
+      "engineLoadPct": 20,
+      "throttlePositionPct": 23,
+      "intakeTempC": 33,
+      "milOn": false,
+      "mafGps": null,
+      "fuelLevelPct": 56,
+      "controlModuleVoltageV": null
+    },
+    {
+      "deviceId": "sim-device-001",
+      "vehicleId": "venue-2021",
+      "bootId": "123e4567-e89b-12d3-a456-426614174000",
+      "recordedAt": "2026-09-10T12:30:00Z",
+      "sequenceNumber": 2,
+      "source": "SIMULATED",
+      "rpm": -1,
+      "speedKph": 12,
+      "coolantTempC": 40,
+      "engineLoadPct": 20,
+      "throttlePositionPct": 23,
+      "intakeTempC": 33,
+      "milOn": false,
+      "mafGps": null,
+      "fuelLevelPct": 56,
+      "controlModuleVoltageV": null
+    }
+  ]
+}

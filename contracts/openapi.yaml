@@ -4,10 +4,1145 @@ info:
   title: AutoPulse API
   version: 0.1.0
 
-paths: {}
+paths:
+  /api/v1/vehicles/{vehicleId}/service-profile:
+    parameters:
+      - {$ref: '#/components/parameters/VehicleId'}
+    get:
+      operationId: serviceProfile
+      summary: Explicit applicability/schedule and current manual oil assessment
+      responses:
+        '200':
+          description: Missing profile/history is UNKNOWN, never factory service at zero.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ServiceProfileView'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      operationId: updateServiceProfile
+      description: Strict 8192-byte UTF-8 command. Vehicle/requestId binds exact canonical operation and body; replay preserves original receipt, differing content conflicts. expectedRevision prevents lost updates. No automatic normal/severe selection. See ADR 0031.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ServiceProfileCommand'}
+      responses: &maintenanceWriteResponses
+        '200':
+          description: Committed original mutation receipt; derived recommendations may still be pending.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MaintenanceReceipt'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409':
+          description: IDENTITY_CONFLICT, REVISION_CONFLICT, ODOMETER_HISTORY_CONFLICT or TRANSITION_NOT_ALLOWED; nothing changed.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ApiError'}
+        '413':
+          description: Command exceeds 8192 UTF-8 bytes.
+        '415': {$ref: '#/components/responses/UnsupportedMediaType'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /api/v1/vehicles/{vehicleId}/maintenance-records:
+    parameters:
+      - {$ref: '#/components/parameters/VehicleId'}
+    get:
+      operationId: maintenanceRecords
+      parameters: &maintenancePageParameters
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+        - {$ref: '#/components/parameters/Cursor'}
+      responses:
+        '200':
+          description: Effective records, descending observedAt/UUID, vehicle/resource/limit/generation-bound paging. Native integers require lossless decoding. No deletion; corrections retain prior revisions.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MaintenanceEntryPage'}
+        '400': {$ref: '#/components/responses/QueryInvalid'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/PageChanged'}
+    post:
+      operationId: createMaintenanceRecord
+      requestBody: &maintenanceEntryRequest
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MaintenanceEntryCommand'}
+      responses: *maintenanceWriteResponses
+  /api/v1/vehicles/{vehicleId}/maintenance-records/{entryId}:
+    parameters:
+      - {$ref: '#/components/parameters/VehicleId'}
+      - {name: entryId, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: maintenanceRecordDetail
+      responses:
+        '200':
+          description: Effective record and newest 100 immutable revisions; earlier history is explicitly flagged.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MaintenanceEntryDetail'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    patch:
+      operationId: correctMaintenanceRecord
+      description: Full replacement revision, nonempty correctionReason required; kind is immutable. Rejects future timestamps and chronologically inconsistent odometers. Backdated entries cannot roll current odometer backwards.
+      requestBody: *maintenanceEntryRequest
+      responses: *maintenanceWriteResponses
+  /api/v1/vehicles/{vehicleId}/recommendations:
+    parameters:
+      - {$ref: '#/components/parameters/VehicleId'}
+    get:
+      operationId: recommendations
+      parameters: *maintenancePageParameters
+      responses:
+        '200':
+          description: Bounded versioned advisory history, not fault resolution or driving-safety advice. Profile/unknown/stale evidence is explicit. URLs are scoped, not authentication; local/private only.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RecommendationPage'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/PageChanged'}
+  /api/v1/vehicles/{vehicleId}/recommendations/{recommendationId}:
+    parameters:
+      - {$ref: '#/components/parameters/VehicleId'}
+      - {name: recommendationId, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: recommendationDetail
+      responses:
+        '200':
+          description: Advisory and newest 100 immutable evidence/workflow revisions.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RecommendationDetail'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    patch:
+      operationId: recommendationAction
+      description: OPEN to ACKNOWLEDGED/DISMISSED/COMPLETED; ACKNOWLEDGED to DISMISSED/COMPLETED. Oil completion requires a matching service record, not this action. User workflow never clears diagnostics. Terminal states cannot reopen.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RecommendationAction'}
+      responses: *maintenanceWriteResponses
+  /api/v1/device/diagnostic-snapshots:
+    post:
+      operationId: ingestDiagnosticSnapshot
+      x-implementation-status: implemented
+      x-max-request-bytes: 65536
+      summary: Immutable read-only diagnostic snapshot acceptance
+      description: >-
+        Independent device/boot/diagnosticSequence
+        identity; canonical replay preserves original receipt. Future tolerance 120s;
+        absence freshness 300s; completeness, native microsecond ordering and association
+        rules in ADRs 0029/0030. Snapshot and required bounded queue work commit atomically.
+        Diagnostic processing is separately opt-in and disabled by default.
+        No control operations or arbitrary adapter evidence.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/DiagnosticSnapshot'}
+      responses:
+        '200':
+          description: ACCEPTED or exact DUPLICATE with the original snapshot ID and receipt; not a guarantee that events are projected.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DiagnosticSnapshotReceipt'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '404':
+          description: UNKNOWN_DEVICE or UNKNOWN_VEHICLE.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ApiError'}
+        '409':
+          description: IDENTITY_CONFLICT or DEVICE_VEHICLE_MISMATCH. No new snapshot/work acknowledged.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ApiError'}
+        '413':
+          description: REQUEST_TOO_LARGE above 65536 UTF-8 bytes; nothing accepted.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ApiError'}
+        '415': {$ref: '#/components/responses/UnsupportedMediaType'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /api/v1/vehicles/{vehicleId}/diagnostics:
+    get:
+      operationId: listDiagnosticEvents
+      x-implementation-status: implemented
+      summary: Bounded vehicle-scoped diagnostic event cycles
+      description: >-
+        Descending lastObservedAt/event UUID, generation-bound cursor,
+        explicit pending/review processing. Known empty is items[]; unsupported or stale
+        reads never imply healthy. Source/category/observation state are independent.
+        Vehicle URLs are not authorization; local/private use only pending separate security work.
+        latestSnapshot is only the most recently captured snapshot across the vehicle,
+        not complete coverage of all devices/ECUs. Inspect its read outcomes and freshness.
+      parameters:
+        - {$ref: '#/components/parameters/VehicleId'}
+        - {$ref: '#/components/parameters/Cursor'}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+        - {name: category, in: query, schema: {type: string, enum: [PENDING, CONFIRMED, PERMANENT]}}
+        - {name: observationState, in: query, schema: {type: string, enum: [PRESENT, NOT_OBSERVED]}}
+      responses:
+        '200':
+          description: Bounded event cycles and processing/generation context; not proof of complete capture.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DiagnosticEventPage'}
+        '400': {$ref: '#/components/responses/QueryInvalid'}
+        '404':
+          description: UNKNOWN_VEHICLE.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ApiError'}
+        '409': {$ref: '#/components/responses/PageChanged'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /api/v1/vehicles/{vehicleId}/diagnostics/{eventId}:
+    get:
+      operationId: diagnosticEventDetail
+      x-implementation-status: implemented
+      summary: Vehicle-scoped diagnostic event detail
+      parameters:
+        - {$ref: '#/components/parameters/VehicleId'}
+        - {name: eventId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: One event cycle with bounded provenance; observation state is not recommendation workflow or a diagnosis.
+          headers:
+            X-Diagnostic-Processing-State:
+              schema: {type: string, enum: [CURRENT, PENDING, REVIEW]}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DiagnosticEvent'}
+        '400': {$ref: '#/components/responses/QueryInvalid'}
+        '404':
+          description: UNKNOWN_VEHICLE or UNKNOWN_DIAGNOSTIC_EVENT; wrong-vehicle event is indistinguishable from unknown.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ApiError'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /api/v1/vehicles/{vehicleId}/trips:
+    get:
+      operationId: listTrips
+      x-implementation-status: implemented
+      summary: Bounded persisted trip list
+      description: >-
+        Default includes active/provisional, excludes
+        superseded. Descending startedAt then trip UUID. Cursors bind vehicle,
+        limit and generation; mutations between pages return 409 PAGE_CHANGED.
+      parameters:
+        - {$ref: '#/components/parameters/VehicleId'}
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+        - {$ref: '#/components/parameters/Cursor'}
+      responses:
+        '200':
+          description: Known vehicle, possibly empty items. Follow nextCursor; not an immutable snapshot.
+          headers:
+            X-Trip-Data-Generation:
+              description: Snapshot generation; compare exactly with history generation before combining summary and charts.
+              schema: {type: string, pattern: '^[0-9]+$', maxLength: 20}
+            X-Trip-Processing-State:
+              description: CURRENT, PENDING or REVIEW; queued/unapplied input must not be described as complete history.
+              schema: {type: string, enum: [CURRENT, PENDING, REVIEW]}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TripPage'}
+        '400': {$ref: '#/components/responses/QueryInvalid'}
+        '404': {$ref: '#/components/responses/HistoryNotFound'}
+        '409': {$ref: '#/components/responses/PageChanged'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /api/v1/vehicles/{vehicleId}/trips/{tripId}:
+    get:
+      operationId: tripDetail
+      x-implementation-status: implemented
+      summary: Vehicle-scoped persisted trip detail
+      description: >-
+        Unknown/wrong-vehicle trip is UNKNOWN_TRIP, never returned
+        through another vehicle. Refresh on navigation/manual refresh and compare
+        revision. Superseded references keep links; provisional values can change.
+      parameters:
+        - {$ref: '#/components/parameters/VehicleId'}
+        - name: tripId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Trip evidence and exact sample-weighted summary fractions, not a vehicle odometer.
+          headers:
+            X-Trip-Data-Generation:
+              description: Snapshot generation; compare exactly with history generation before combining summary and charts.
+              schema: {type: string, pattern: '^[0-9]+$', maxLength: 20}
+            X-Trip-Processing-State:
+              schema: {type: string, enum: [CURRENT, PENDING, REVIEW]}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Trip'}
+        '400': {$ref: '#/components/responses/QueryInvalid'}
+        '404': {$ref: '#/components/responses/HistoryNotFound'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /api/v1/vehicles/{vehicleId}/telemetry/history:
+    get:
+      operationId: telemetryHistory
+      x-implementation-status: implemented
+      x-supported-resolutions: [raw, 1m, 5m]
+      summary: Half-open raw or UTC-bucketed telemetry history
+      description: >-
+        Raw history and 1m/5m aggregation are served. Required from < to,
+        UTC half-open [from,to), at most six
+        fractional digits. Raw range <=24h; aggregated <=31 days. Ascending raw
+        timestamp/device UUID/boot UUID/sequence tuple with microsecond precision;
+        UTC-aligned aggregate buckets clipped at range edges, with partial flag.
+        Nulls/absent buckets are never zero-filled. Cursors bind vehicle, tripId,
+        normalized range/resolution/limit and generation; expire after 15 minutes.
+        Accepted inserts, reconciliation or retention invalidate continuation with
+        409 PAGE_CHANGED; restart paging. Raw expiration is explicit availability,
+        never an unexplained empty result. Explicit opt-in final-only retention
+        atomically records expiry and advances generation. No silent truncation:
+        follow nextCursor. Superseded trip filters return 409 PAGE_CHANGED; inspect
+        trip-detail replacement links. Availability incomplete conservatively
+        flags pending/review projection; AVAILABLE does not certify complete
+        hardware capture or non-null sensor coverage. Aggregate pages span at most
+        limit consecutive UTC buckets starting at the next observed bucket; empty
+        buckets are omitted, not interpolated. Numeric work is capped at 100000
+        matching readings per page with a 10-second transaction timeout. An opt-in,
+        disabled-by-default ownership-aware unfiltered aggregate reader instead
+        caps combined raw/ledger metadata candidates at 10000 before membership
+        filtering; mirrors consume two physical candidates but enter statistics
+        once. Verified full UTC trip contributions can supply stored exact totals;
+        clipped archive edges and raw-owned inputs are calculated from their exact
+        subsets. Membership/equality checks and metadata caps still apply. Raw and
+        trip-filtered queries retain the default reader. Its signed
+        bucket-boundary cursors cannot be interchanged with default-reader cursors;
+        restart paging when changing modes. Both modes report range/trip-scoped
+        raw expiry explicitly and preserve supported aggregates. Exceeding
+        the row cap returns 503 HISTORY_DENSITY_LIMIT with no partial summary;
+        reduce limit or narrow the range. Sources and deviceCount expose mixed
+        provenance; unfiltered aggregates include all raw ties/devices, not just
+        canonical trip evidence. The opt-in reader preserves that logical scope
+        through disjoint raw/verified-retained ownership. Ownership gaps or unequal
+        raw/archive evidence return explicit 503 errors, never partial success.
+        Per-sensor sample coverage is count/sampleCount,
+        never elapsed-time coverage. No distance is interpolated between buckets.
+      parameters:
+        - {$ref: '#/components/parameters/VehicleId'}
+        - name: from
+          in: query
+          required: true
+          schema: {$ref: '#/components/schemas/TelemetrySample/properties/recordedAt'}
+        - name: to
+          in: query
+          required: true
+          schema: {$ref: '#/components/schemas/TelemetrySample/properties/recordedAt'}
+        - name: resolution
+          in: query
+          description: Raw readings or 1-minute/5-minute UTC-aligned sample-weighted summaries.
+          schema: {type: string, enum: [raw, 1m, 5m], default: raw}
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 1000, default: 200}
+        - name: tripId
+          in: query
+          schema: {type: string, format: uuid}
+        - {$ref: '#/components/parameters/Cursor'}
+      responses:
+        '200':
+          description: Explicitly tagged raw/aggregate points, coverage and continuation; known empty returns [] points.
+          headers:
+            X-Trip-Processing-State:
+              schema: {type: string, enum: [CURRENT, PENDING, REVIEW]}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/HistoryPage'}
+        '400': {$ref: '#/components/responses/QueryInvalid'}
+        '404': {$ref: '#/components/responses/HistoryNotFound'}
+        '409': {$ref: '#/components/responses/PageChanged'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /api/v1/vehicles/{vehicleId}/live:
+    get:
+      operationId: liveTelemetry
+      summary: Subscribe to committed authoritative current telemetry
+      description: >-
+        Single-instance current-state stream, not an event log. Initial/reconnect
+        telemetry event is LatestTelemetry; empty event is LiveEmpty and stays open.
+        Named telemetry events coalesce committed latest changes. Duplicates, rejected
+        or rolled-back rows do not refresh state; older arrivals cannot regress latest.
+        Comment heartbeats every 15 seconds are not measurements. No event IDs or
+        Last-Event-ID resume; reconnect resnapshots. Streams retire after a two-minute
+        logical lease; actual transport completion may take longer. Slow clients are
+        retired without blocking the shared coordinator. Active plus retiring transports
+        reserve capacity until their writer and cleanup return: 64 globally, 8 per vehicle.
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+          schema: {type: string, minLength: 1}
+      responses:
+        '200':
+          description: SSE framing; telemetry and empty data are JSON, comments are keepalives.
+          content:
+            text/event-stream:
+              schema: {type: string}
+              example: "event: empty\ndata: {\"vehicleId\":\"empty-vehicle\"}\n\n"
+        '404':
+          description: Unknown vehicle, resolved before stream headers.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ApiError'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /api/v1/device/telemetry/batches:
+    post:
+      operationId: ingestTelemetryBatch
+      summary: Independently validate and persist up to 100 readings
+      description: >-
+        Maximum UTF-8 request size is 262144 bytes. A valid envelope receives HTTP 200
+        with one indexed result per item, including invalid items. Exact resends are
+        duplicates; changed content under the same identity is rejected as a conflict.
+        Systemic database failures return 503 and roll back the batch; retry its unchanged items.
+      x-max-request-bytes: 262144
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/TelemetryBatch'}
+      responses:
+        '200':
+          description: Counts match indexed results and sum to the submitted item count.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BatchResult'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '413': {$ref: '#/components/responses/TooLarge'}
+        '415': {$ref: '#/components/responses/UnsupportedMediaType'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /api/v1/vehicles/{vehicleId}/telemetry/latest:
+    get:
+      operationId: latestTelemetry
+      summary: Get the newest accepted measurement
+      description: >-
+        Orders by measurement time, then internal device UUID, boot UUID, and sequence
+        number (all descending). Receipt time never makes delayed data newer.
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+          schema: {type: string, minLength: 1}
+      responses:
+        '200':
+          description: Latest reading and its original server receipt time.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LatestTelemetry'}
+        '204': {description: Vehicle exists but has no accepted readings.}
+        '404':
+          description: Unknown public vehicle identifier (UNKNOWN_VEHICLE).
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ApiError'}
+        '503': {$ref: '#/components/responses/Unavailable'}
 
 components:
+  parameters:
+    VehicleId:
+      name: vehicleId
+      in: path
+      required: true
+      schema: {type: string, minLength: 1}
+    Cursor:
+      name: cursor
+      in: query
+      schema: {type: string, minLength: 1, maxLength: 2048}
+      description: Opaque HMAC-bound 15-minute cursor; restart invalidates it. Not a stable snapshot.
+  responses:
+    NotFound:
+      description: Unknown vehicle or wrong-vehicle/unknown resource, indistinguishable from missing.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
+    QueryInvalid:
+      description: INVALID_QUERY or INVALID_CURSOR, including range/precision/limit/resolution/filter/cursor mismatch.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
+    HistoryNotFound:
+      description: UNKNOWN_VEHICLE or UNKNOWN_TRIP; wrong-vehicle trip is indistinguishable from unknown trip.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
+    PageChanged:
+      description: PAGE_CHANGED because data/projection/availability generation changed; restart from first page.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
+    BadRequest:
+      description: Malformed JSON or invalid envelope (INVALID_REQUEST). No items processed.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
+    TooLarge:
+      description: Request exceeds 262144 bytes (REQUEST_TOO_LARGE). No items processed.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
+    UnsupportedMediaType:
+      description: Content-Type must be application/json (UNSUPPORTED_MEDIA_TYPE).
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
+    Unavailable:
+      description: Database/system failure (SERVICE_UNAVAILABLE), PUBLICATION_PENDING during correction publication, HISTORY_DENSITY_LIMIT above the active reader's cap (100000 matching readings by default or 10000 combined metadata candidates for opt-in owned aggregates), or opt-in HISTORY_OWNERSHIP_GAP/HISTORY_OWNERSHIP_MISMATCH when raw/archive evidence is unavailable or disagrees. Reduce limit/range for density; investigate ownership errors. No success acknowledgment or partial summary.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
   schemas:
+    MaintenanceReceipt:
+      type: object
+      additionalProperties: false
+      required: [id, revision, recordedAt]
+      properties:
+        id: {type: string, format: uuid}
+        revision: {type: integer, format: int64, minimum: 1}
+        recordedAt: {type: string, format: date-time}
+    ServiceProfileCommand:
+      type: object
+      additionalProperties: false
+      required: [requestId, expectedRevision, applicability, usageSchedule, distanceUnit, timeZone, normalOilSpecificationConfirmed]
+      properties:
+        requestId: {type: string, format: uuid}
+        expectedRevision: {type: integer, format: int64, minimum: 0}
+        applicability: {type: string, enum: [UNCONFIRMED, US_2021_VENUE_G16]}
+        usageSchedule: {type: string, enum: [UNSET, NORMAL, SEVERE]}
+        distanceUnit: {type: string, enum: [MI, KM]}
+        timeZone: {type: string, minLength: 1, maxLength: 80}
+        normalOilSpecificationConfirmed: {type: boolean}
+    StoredServiceProfile:
+      type: object
+      nullable: true
+      additionalProperties: false
+      required: [revision, applicability, usageSchedule, distanceUnit, timeZone, normalOilSpecificationConfirmed]
+      properties:
+        revision: {type: integer, format: int64, minimum: 1}
+        applicability: {type: string, enum: [UNCONFIRMED, US_2021_VENUE_G16]}
+        usageSchedule: {type: string, enum: [UNSET, NORMAL, SEVERE]}
+        distanceUnit: {type: string, enum: [MI, KM]}
+        timeZone: {type: string, minLength: 1, maxLength: 80}
+        normalOilSpecificationConfirmed: {type: boolean}
+    OilAssessment:
+      type: object
+      required: [ruleVersion, state, source, reason, provenance, profile, service, currentOdometer, evaluatedAt]
+      properties:
+        ruleVersion: {type: string, enum: [us-2021-venue-g16-oil-v1]}
+        state: {type: string, enum: [UNKNOWN, NOT_DUE, DUE]}
+        source: {type: string, enum: [MANUAL]}
+        reason: {type: string, maxLength: 100}
+        provenance: {type: object}
+        profile: {$ref: '#/components/schemas/StoredServiceProfile'}
+        service: {type: object, nullable: true}
+        currentOdometer: {type: object, nullable: true}
+        evaluatedAt: {type: string, format: date-time}
+        dueDate: {type: string, format: date}
+        dueOdometerValue: {type: string, pattern: '^[0-9]+(\.[0-9]+)?$'}
+        odometerUnit: {type: string, enum: [MI, KM]}
+        odometerFreshness: {type: string, enum: [UNKNOWN, STALE, CURRENT]}
+    ServiceProfileView:
+      type: object
+      additionalProperties: false
+      required: [revision, profile, oilAssessment]
+      properties:
+        revision: {type: integer, format: int64, minimum: 0}
+        profile: {$ref: '#/components/schemas/StoredServiceProfile'}
+        oilAssessment: {$ref: '#/components/schemas/OilAssessment'}
+    MaintenanceEntryCommand:
+      type: object
+      additionalProperties: false
+      required: [requestId, expectedRevision, kind, serviceType, observedAt, odometerValue, odometerUnit, notes, correctionReason]
+      properties:
+        requestId: {type: string, format: uuid}
+        expectedRevision: {type: integer, format: int64, minimum: 0}
+        kind: {type: string, enum: [ODOMETER, SERVICE]}
+        serviceType: {type: string, nullable: true, enum: [OIL_FILTER, null]}
+        observedAt: {type: string, format: date-time, description: Strict UTC with at most six fractional digits; no future observations.}
+        odometerValue: {type: string, pattern: '^(0|[1-9][0-9]{0,6})(\.[0-9]{1,3})?$'}
+        odometerUnit: {type: string, enum: [MI, KM]}
+        notes: {type: string, nullable: true, minLength: 1, maxLength: 500}
+        correctionReason: {type: string, nullable: true, minLength: 1, maxLength: 200}
+    MaintenanceEntry:
+      type: object
+      additionalProperties: false
+      required: [entryId, revision, kind, serviceType, observedAt, odometerValue, odometerUnit, notes, correctionReason]
+      properties:
+        entryId: {type: string, format: uuid}
+        revision: {type: integer, format: int64, minimum: 1}
+        kind: {type: string, enum: [ODOMETER, SERVICE]}
+        serviceType: {type: string, nullable: true, enum: [OIL_FILTER, null]}
+        observedAt: {type: string, format: date-time}
+        odometerValue: {type: string, pattern: '^(0|[1-9][0-9]{0,6})(\.[0-9]{1,3})?$'}
+        odometerUnit: {type: string, enum: [MI, KM]}
+        notes: {type: string, nullable: true, maxLength: 500}
+        correctionReason: {type: string, nullable: true, maxLength: 200}
+    RecommendationAction:
+      type: object
+      additionalProperties: false
+      required: [requestId, expectedRevision, state]
+      properties:
+        requestId: {type: string, format: uuid}
+        expectedRevision: {type: integer, format: int64, minimum: 1}
+        state: {type: string, enum: [ACKNOWLEDGED, DISMISSED, COMPLETED]}
+    Recommendation:
+      type: object
+      additionalProperties: false
+      required: [id, kind, state, ruleVersion, revision, generatedAt, evidence, currentObservation]
+      properties:
+        id: {type: string, format: uuid}
+        kind: {type: string, enum: [OIL_FILTER, DIAGNOSTIC, TEMPERATURE]}
+        state: {type: string, enum: [OPEN, ACKNOWLEDGED, COMPLETED, DISMISSED, EXPIRED]}
+        ruleVersion: {type: string, maxLength: 80}
+        revision: {type: integer, format: int64, minimum: 1}
+        generatedAt: {type: string, format: date-time}
+        evidence: {type: object, description: Frozen original rule/version/inputs/provenance/source/times; synthetic values are explicitly labeled. Never a command to an ECU.}
+        currentObservation: {type: object, description: Current scope freshness/uncertainty is separate from immutable generation evidence and workflow state. UNKNOWN or STALE never implies recovery.}
+    MaintenanceEntryPage:
+      type: object
+      additionalProperties: false
+      required: [items, generation, nextCursor, processingState]
+      properties:
+        items: {type: array, maxItems: 100, items: {$ref: '#/components/schemas/MaintenanceEntry'}}
+        generation: {type: string, pattern: '^[0-9]+$'}
+        nextCursor: {type: string, nullable: true, maxLength: 2048}
+        processingState: {type: string, enum: [CURRENT, PENDING, REVIEW]}
+    RecommendationPage:
+      type: object
+      additionalProperties: false
+      required: [items, generation, nextCursor, processingState, oilAssessment]
+      properties:
+        items: {type: array, maxItems: 100, items: {$ref: '#/components/schemas/Recommendation'}}
+        generation: {type: string, pattern: '^[0-9]+$'}
+        nextCursor: {type: string, nullable: true, maxLength: 2048}
+        processingState: {type: string, enum: [CURRENT, PENDING, REVIEW]}
+        oilAssessment: {$ref: '#/components/schemas/OilAssessment'}
+    MaintenanceEntryDetail:
+      type: object
+      additionalProperties: false
+      required: [item, recentRevisions, hasEarlierRevisions]
+      properties:
+        item: {$ref: '#/components/schemas/MaintenanceEntry'}
+        recentRevisions: {type: array, maxItems: 100, items: {type: object}}
+        hasEarlierRevisions: {type: boolean}
+    RecommendationDetail:
+      type: object
+      additionalProperties: false
+      required: [item, recentRevisions, hasEarlierRevisions]
+      properties:
+        item: {$ref: '#/components/schemas/Recommendation'}
+        recentRevisions: {type: array, maxItems: 100, items: {type: object}}
+        hasEarlierRevisions: {type: boolean}
+    DiagnosticCategoryRead:
+      type: "object"
+      additionalProperties: false
+      required: ["category","outcome","codes"]
+      properties:
+        category:
+          type: "string"
+          enum: ["PENDING","CONFIRMED","PERMANENT"]
+        outcome:
+          type: "string"
+          enum: ["COMPLETE","PARTIAL","UNSUPPORTED","UNAVAILABLE","TIMEOUT","FAILED"]
+        codes:
+          type: "array"
+          maxItems: 32
+          uniqueItems: true
+          items:
+            type: "string"
+            pattern: "^[PBCU][0-3][0-9A-F]{3}$"
+      oneOf:
+        -
+          properties:
+            outcome:
+              enum: ["COMPLETE","PARTIAL"]
+        -
+          properties:
+            outcome:
+              enum: ["UNSUPPORTED","UNAVAILABLE","TIMEOUT","FAILED"]
+            codes:
+              maxItems: 0
+    DiagnosticMilRead:
+      type: "object"
+      additionalProperties: false
+      required: ["outcome","illuminated"]
+      properties:
+        outcome:
+          type: "string"
+          enum: ["COMPLETE","PARTIAL","UNSUPPORTED","UNAVAILABLE","TIMEOUT","FAILED"]
+        illuminated:
+          type: "boolean"
+          nullable: true
+      oneOf:
+        -
+          properties:
+            outcome:
+              enum: ["COMPLETE"]
+            illuminated:
+              type: "boolean"
+              nullable: false
+        -
+          properties:
+            outcome:
+              enum: ["UNSUPPORTED","UNAVAILABLE","TIMEOUT","FAILED"]
+            illuminated:
+              type: "boolean"
+              nullable: true
+              enum: [null]
+    DiagnosticEcuRead:
+      type: "object"
+      additionalProperties: false
+      required: ["ecuId","outcome","mil","categories"]
+      properties:
+        ecuId:
+          type: "string"
+          pattern: "^[A-Z][A-Z0-9_-]{0,31}$"
+        outcome:
+          type: "string"
+          enum: ["COMPLETE","PARTIAL","UNSUPPORTED","UNAVAILABLE","TIMEOUT","FAILED"]
+        mil:
+          $ref: "#/components/schemas/DiagnosticMilRead"
+        categories:
+          type: "array"
+          minItems: 3
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/DiagnosticCategoryRead"
+      description: "Canonical category order PENDING, CONFIRMED, PERMANENT. COMPLETE iff all reads complete; other non-PARTIAL ECU outcomes must match all reads. Enforced semantically, see ADR 0029."
+    DiagnosticSnapshot:
+      type: "object"
+      additionalProperties: false
+      required: ["snapshotVersion","deviceId","vehicleId","bootId","diagnosticSequence","capturedAt","source","ecus"]
+      properties:
+        snapshotVersion:
+          type: "integer"
+          enum: [1]
+        deviceId:
+          type: "string"
+          minLength: 1
+          maxLength: 80
+          pattern: "^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$"
+        vehicleId:
+          type: "string"
+          minLength: 1
+          maxLength: 80
+          pattern: "^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$"
+        bootId:
+          type: "string"
+          format: "uuid"
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        diagnosticSequence:
+          type: "integer"
+          minimum: 0
+          maximum: 9223372036854775807
+        capturedAt:
+          type: "string"
+          format: "date-time"
+          pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?Z$"
+        source:
+          type: "string"
+          enum: ["SIMULATED","OBD"]
+        ecus:
+          type: "array"
+          minItems: 1
+          maxItems: 8
+          items:
+            $ref: "#/components/schemas/DiagnosticEcuRead"
+      description: "Implemented v1 immutable evidence; 65536 UTF-8 bytes max. Sorted unique ECU IDs/codes and strict native integer tokens required. No receipt time, secrets, free-form logs or commands. Freshness/future/association checks are semantic; see ADRs 0029 and 0030."
+    DiagnosticSnapshotReceipt:
+      type: "object"
+      additionalProperties: false
+      required: ["snapshotId","result","receivedAt"]
+      properties:
+        snapshotId:
+          type: "string"
+          format: "uuid"
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        result:
+          type: "string"
+          enum: ["ACCEPTED","DUPLICATE"]
+        receivedAt:
+          type: "string"
+          format: "date-time"
+          pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?Z$"
+    DiagnosticEvent:
+      type: "object"
+      additionalProperties: false
+      required: ["eventId","vehicleId","deviceId","source","ecuId","category","code","observationState","cycleNumber","positiveObservationCount","firstObservedAt","lastObservedAt","lastAppliedAt","currentReadOutcome","freshness","evidence","definition"]
+      properties:
+        eventId:
+          type: "string"
+          format: "uuid"
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        vehicleId:
+          type: "string"
+          minLength: 1
+          maxLength: 80
+          pattern: "^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$"
+        deviceId:
+          type: "string"
+          minLength: 1
+          maxLength: 80
+          pattern: "^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$"
+        source:
+          type: "string"
+          enum: ["SIMULATED","OBD"]
+        ecuId:
+          type: "string"
+          pattern: "^[A-Z][A-Z0-9_-]{0,31}$"
+        category:
+          type: "string"
+          enum: ["PENDING","CONFIRMED","PERMANENT"]
+        code:
+          type: "string"
+          pattern: "^[PBCU][0-3][0-9A-F]{3}$"
+        observationState:
+          type: "string"
+          enum: ["PRESENT","NOT_OBSERVED"]
+        cycleNumber:
+          type: "integer"
+          minimum: 1
+        positiveObservationCount:
+          type: "integer"
+          minimum: 1
+        firstObservedAt:
+          type: "string"
+          format: "date-time"
+          pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?Z$"
+        lastObservedAt:
+          type: "string"
+          format: "date-time"
+          pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?Z$"
+        lastAppliedAt:
+          type: "string"
+          format: "date-time"
+          pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?Z$"
+        currentReadOutcome:
+          type: "string"
+          enum: ["COMPLETE","PARTIAL","UNSUPPORTED","UNAVAILABLE","TIMEOUT","FAILED"]
+        freshness:
+          type: "string"
+          enum: ["FRESH","STALE","CLOCK_WARNING","UNKNOWN"]
+        mil:
+          $ref: '#/components/schemas/DiagnosticMilRead'
+        recentTransitions:
+          type: array
+          nullable: true
+          maxItems: 100
+          description: Detail only; newest 100 immutable transitions, not the whole lifetime. Null on list items.
+          items:
+            type: object
+            additionalProperties: false
+            required: [kind, snapshotId, capturedAt]
+            properties:
+              kind: {type: string, enum: [PRESENT, OBSERVED, NOT_OBSERVED]}
+              snapshotId: {type: string, format: uuid}
+              capturedAt: {type: string, format: date-time}
+        hasEarlierTransitions:
+          type: boolean
+          nullable: true
+          description: True when more than 100 transitions exist; never present the recent slice as complete. Null on list items.
+        evidence:
+          type: "object"
+          additionalProperties: false
+          required: ["firstSnapshotId","lastPositiveSnapshotId","lastAppliedSnapshotId"]
+          properties:
+            firstSnapshotId:
+              type: "string"
+              format: "uuid"
+              pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            lastPositiveSnapshotId:
+              type: "string"
+              format: "uuid"
+              pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            lastAppliedSnapshotId:
+              type: "string"
+              format: "uuid"
+              pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        definition:
+          type: "object"
+          additionalProperties: false
+          required: ["verification","description","sourceUrl","version"]
+          properties:
+            verification:
+              type: "string"
+              enum: ["VERIFIED","UNKNOWN"]
+            description:
+              type: "string"
+              nullable: true
+              maxLength: 500
+            sourceUrl:
+              type: "string"
+              nullable: true
+              maxLength: 2048
+            version:
+              type: "string"
+              nullable: true
+              maxLength: 80
+            license: {type: string, nullable: true, maxLength: 256}
+            scope: {type: string, maxLength: 500}
+            sourceTitle: {type: string, nullable: true, maxLength: 256}
+    DiagnosticEventPage:
+      type: "object"
+      additionalProperties: false
+      required: ["items","nextCursor","generation","processingState"]
+      properties:
+        items:
+          type: "array"
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/DiagnosticEvent"
+        nextCursor:
+          type: "string"
+          nullable: true
+          maxLength: 2048
+        generation:
+          type: "string"
+          pattern: "^[0-9]{1,20}$"
+        processingState:
+          type: "string"
+          enum: ["CURRENT","PENDING","REVIEW"]
+        latestSnapshot:
+          type: object
+          nullable: true
+          additionalProperties: false
+          required: [snapshotId, receivedAt, snapshot, freshness]
+          description: Most recently captured immutable snapshot only. Null if none accepted; not a healthy/complete-coverage assertion.
+          properties:
+            snapshotId: {type: string, format: uuid}
+            receivedAt: {type: string, format: date-time}
+            snapshot: {$ref: '#/components/schemas/DiagnosticSnapshot'}
+            freshness: {type: string, enum: [FRESH, STALE, CLOCK_WARNING, UNKNOWN]}
+    MetricStatistics:
+      type: object
+      required: [count, sum, min, max]
+      description: >-
+        Exact decimal sum/non-null count defines the sample-weighted mean.
+        Zero-count sum/min/max must be null. JSON number tokens are not restricted
+        to binary64 totals: a sum can exceed JavaScript's finite range even when
+        each accepted input and the resulting mean are finite. Consumers must
+        preserve exact sum tokens before parsing, divide using decimal arithmetic
+        and only then produce a display approximation. Decimal strings, Infinity
+        and NaN are not alternative wire representations. See ADR 0028.
+      properties:
+        count: {type: integer, minimum: 0}
+        sum: {type: number, nullable: true}
+        min: {type: number, nullable: true}
+        max: {type: number, nullable: true}
+    MetricStatisticsSet:
+      type: object
+      required: [rpm, speedKph, coolantTempC, engineLoadPct, throttlePositionPct, intakeTempC, mafGps, fuelLevelPct, controlModuleVoltageV]
+      additionalProperties: false
+      properties:
+        rpm: {$ref: '#/components/schemas/MetricStatistics'}
+        speedKph: {$ref: '#/components/schemas/MetricStatistics'}
+        coolantTempC: {$ref: '#/components/schemas/MetricStatistics'}
+        engineLoadPct: {$ref: '#/components/schemas/MetricStatistics'}
+        throttlePositionPct: {$ref: '#/components/schemas/MetricStatistics'}
+        intakeTempC: {$ref: '#/components/schemas/MetricStatistics'}
+        mafGps: {$ref: '#/components/schemas/MetricStatistics'}
+        fuelLevelPct: {$ref: '#/components/schemas/MetricStatistics'}
+        controlModuleVoltageV: {$ref: '#/components/schemas/MetricStatistics'}
+    NullableDistanceRatio:
+      type: object
+      nullable: true
+      required: [numerator, denominator]
+      properties:
+        numerator: {type: number, minimum: 0}
+        denominator: {type: number, minimum: 0, exclusiveMinimum: true}
+      description: >-
+        Exact JSON-number kilometres numerator/denominator; null means no eligible
+        speed coverage, not zero distance. Preserve both exact tokens and divide
+        before conversion to binary64; a large numerator can have a finite ratio.
+        Outside-display-range results must be labeled, never silently clipped,
+        converted to zero or used to discard an otherwise valid trip.
+    EstimatedDistance:
+      type: object
+      required: [estimated, kilometres, coveredSeconds, durationSeconds]
+      properties:
+        estimated: {type: boolean, enum: [true]}
+        kilometres: {$ref: '#/components/schemas/NullableDistanceRatio'}
+        coveredSeconds: {type: number, minimum: 0}
+        durationSeconds: {type: number, minimum: 0}
+      description: Trapezoidal speed estimate only, never odometer. Coverage is coveredSeconds/durationSeconds; missing/gap/restart intervals are excluded.
+    Trip:
+      type: object
+      required: [tripId, vehicleId, primaryDeviceId, source, startedAt, endedAt, observedThrough, confirmedAt, status, completionReason, algorithmVersion, revision, finalization, sampleCount, metrics, distance, quality, supersededBy]
+      properties:
+        tripId: {type: string, format: uuid}
+        vehicleId: {type: string, minLength: 1}
+        primaryDeviceId: {type: string, minLength: 1}
+        source: {type: string, enum: [SIMULATED, OBD]}
+        startedAt: {type: string, format: date-time}
+        endedAt: {type: string, format: date-time, nullable: true}
+        observedThrough: {type: string, format: date-time}
+        confirmedAt: {type: string, format: date-time, nullable: true}
+        status: {type: string, enum: [ACTIVE, COMPLETED, SUPERSEDED]}
+        completionReason: {type: string, nullable: true, enum: [ENGINE_OFF, SIGNAL_TIMEOUT, SOURCE_CHANGED, DURATION_LIMIT, null]}
+        algorithmVersion: {type: string, enum: [trip-v1-draft]}
+        revision: {type: integer, minimum: 1}
+        finalization: {type: string, enum: [PROVISIONAL, FINAL]}
+        sampleCount: {type: integer, minimum: 1}
+        metrics: {$ref: '#/components/schemas/MetricStatisticsSet'}
+        distance: {$ref: '#/components/schemas/EstimatedDistance'}
+        quality:
+          type: array
+          uniqueItems: true
+          items: {type: string}
+        supersededBy:
+          type: array
+          uniqueItems: true
+          items: {type: string, format: uuid}
+    TripPage:
+      type: object
+      required: [items, nextCursor, generation]
+      properties:
+        items:
+          type: array
+          maxItems: 100
+          items: {$ref: '#/components/schemas/Trip'}
+        nextCursor: {type: string, nullable: true, maxLength: 2048}
+        generation: {type: string, pattern: '^[0-9]+$', maxLength: 20}
+    RawHistoryPoint:
+      type: object
+      required: [kind, reading, receivedAt]
+      properties:
+        kind: {type: string, enum: [raw]}
+        reading: {$ref: '#/components/schemas/TelemetrySample'}
+        receivedAt: {type: string, format: date-time}
+    AggregateHistoryPoint:
+      type: object
+      required: [kind, bucketStart, bucketEnd, partial, sampleCount, metrics, sources, deviceCount, firstObservedAt, lastObservedAt]
+      description: >-
+        Bucket bounds are clipped only to the requested range; partial flags this
+        clipping, not sensor completeness or trip occupancy. Metrics use exact
+        sums/counts; mean=sum/count, sample coverage=count/sampleCount. Empty
+        buckets are absent. Mixed-source/device buckets must not be labeled as
+        homogeneous OBD or SIMULATED data. Trip filters use exact evidence.
+      properties:
+        kind: {type: string, enum: [aggregate]}
+        bucketStart: {type: string, format: date-time}
+        bucketEnd: {type: string, format: date-time}
+        partial: {type: boolean}
+        sampleCount: {type: integer, minimum: 1}
+        metrics: {$ref: '#/components/schemas/MetricStatisticsSet'}
+        sources:
+          type: array
+          minItems: 1
+          maxItems: 2
+          uniqueItems: true
+          items: {type: string, enum: [OBD, SIMULATED]}
+        deviceCount: {type: integer, minimum: 1}
+        firstObservedAt: {type: string, format: date-time}
+        lastObservedAt: {type: string, format: date-time}
+    HistoryAvailability:
+      type: object
+      required: [rawState, rawUnavailableBefore, availableResolutions, incomplete]
+      properties:
+        rawState: {type: string, enum: [AVAILABLE, PARTIALLY_EXPIRED, EXPIRED]}
+        rawUnavailableBefore:
+          type: string
+          format: date-time
+          nullable: true
+          description: Exclusive upper bound on expired observations in this requested window, not a contiguous vehicle-wide cutoff. Protected earlier raw observations may remain. Null when AVAILABLE.
+        availableResolutions:
+          type: array
+          uniqueItems: true
+          items: {type: string, enum: [raw, 1m, 5m]}
+        incomplete: {type: boolean}
+    HistoryPage:
+      type: object
+      required: [from, to, resolution, points, nextCursor, generation, availability]
+      properties:
+        from: {type: string, format: date-time}
+        to: {type: string, format: date-time}
+        resolution: {type: string, enum: [raw, 1m, 5m]}
+        points:
+          type: array
+          maxItems: 1000
+          items:
+            oneOf:
+              - {$ref: '#/components/schemas/RawHistoryPoint'}
+              - {$ref: '#/components/schemas/AggregateHistoryPoint'}
+        nextCursor: {type: string, nullable: true, maxLength: 2048}
+        generation: {type: string, pattern: '^[0-9]+$', maxLength: 20}
+        availability: {$ref: '#/components/schemas/HistoryAvailability'}
+    LiveEmpty:
+      type: object
+      required: [vehicleId]
+      additionalProperties: false
+      properties:
+        vehicleId: {type: string, minLength: 1}
+    TelemetryBatch:
+      type: object
+      additionalProperties: false
+      required: [readings]
+      properties:
+        readings:
+          type: array
+          minItems: 1
+          maxItems: 100
+          description: Each item is independently checked against TelemetrySample; invalid items receive rejected results.
+          items: {}
+    FieldError:
+      type: object
+      required: [field, message]
+      properties:
+        field: {type: string}
+        message: {type: string}
+    ItemResult:
+      oneOf:
+        - type: object
+          required: [index, status]
+          properties:
+            index: {type: integer, minimum: 0}
+            status: {type: string, enum: [accepted, duplicate]}
+        - type: object
+          required: [index, status, code, errors]
+          properties:
+            index: {type: integer, minimum: 0}
+            status: {type: string, enum: [rejected]}
+            code:
+              type: string
+              enum: [INVALID_READING, UNKNOWN_DEVICE, UNKNOWN_VEHICLE, DEVICE_VEHICLE_MISMATCH, IDENTITY_CONFLICT]
+            errors:
+              type: array
+              minItems: 1
+              items: {$ref: '#/components/schemas/FieldError'}
+    BatchResult:
+      type: object
+      required: [accepted, duplicate, rejected, results, correlationId]
+      description: Counts equal the number of corresponding statuses; results retain original item indexes.
+      properties:
+        accepted: {type: integer, minimum: 0}
+        duplicate: {type: integer, minimum: 0}
+        rejected: {type: integer, minimum: 0}
+        correlationId: {type: string, format: uuid}
+        results:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items: {$ref: '#/components/schemas/ItemResult'}
+    ApiError:
+      type: object
+      required: [code, message, correlationId]
+      properties:
+        code: {type: string}
+        message: {type: string}
+        correlationId: {type: string, format: uuid}
+        fieldErrors:
+          type: array
+          items: {$ref: '#/components/schemas/FieldError'}
+    LatestTelemetry:
+      type: object
+      required: [reading, receivedAt]
+      properties:
+        reading: {$ref: '#/components/schemas/TelemetrySample'}
+        receivedAt: {type: string, format: date-time}
     TelemetrySample:
       type: object
       required:
@@ -20,14 +1155,22 @@ components:
       properties:
         deviceId:
           type: string
+          minLength: 1
+          pattern: '\S'
+          description: Must contain at least one non-whitespace character.
         vehicleId:
           type: string
+          minLength: 1
+          pattern: '\S'
+          description: Must contain at least one non-whitespace character.
         bootId:
           type: string
           format: uuid
         recordedAt:
           format: date-time
           type: string
+          pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}[Tt]([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\.[0-9]{1,6})?([Zz]|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$'
+          description: RFC 3339 timestamp, at most six fractional digits, UTC-representable in years 0001-9999. Offsets through 23:59 are accepted. Unsupported precision is rejected, never rounded; normalized to UTC.
         sequenceNumber:
           type: integer
           minimum: 0

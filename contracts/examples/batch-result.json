@@ -1,0 +1,27 @@
+{
+  "accepted": 1,
+  "duplicate": 1,
+  "rejected": 1,
+  "correlationId": "123e4567-e89b-42d3-a456-426614174000",
+  "results": [
+    {
+      "index": 0,
+      "status": "accepted"
+    },
+    {
+      "index": 1,
+      "status": "duplicate"
+    },
+    {
+      "index": 2,
+      "status": "rejected",
+      "code": "INVALID_READING",
+      "errors": [
+        {
+          "field": "rpm",
+          "message": "must be greater than or equal to zero"
+        }
+      ]
+    }
+  ]
+}

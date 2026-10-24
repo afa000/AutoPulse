@@ -1,0 +1,76 @@
+{
+  "algorithmVersion": "trip-v1-draft",
+  "baseTime": "2026-10-20T12:00:00Z",
+  "primaryDeviceId": "20000000-0000-4000-8000-000000000001",
+  "bootId": "123e4567-e89b-42d3-a456-426614174000",
+  "tiny": {
+    "readings": [
+      {"offsetSeconds": 0, "rpm": 0, "speedKph": 0},
+      {"offsetSeconds": 2, "rpm": 1000, "speedKph": 0, "coolantTempC": 20, "engineLoadPct": 10},
+      {"offsetSeconds": 4, "rpm": 2000, "speedKph": 36, "engineLoadPct": 20},
+      {"offsetSeconds": 6, "rpm": 1000, "speedKph": 36, "coolantTempC": 40},
+      {"offsetSeconds": 8, "rpm": 0, "speedKph": 0, "coolantTempC": 50},
+      {"offsetSeconds": 10, "rpm": 0, "speedKph": 0}
+    ],
+    "expected": {
+      "startOffsetSeconds": 2, "endOffsetSeconds": 8, "confirmedOffsetSeconds": 10,
+      "completionReason": "ENGINE_OFF", "sampleCount": 4, "durationSeconds": 6,
+      "speedAreaKphSeconds": 144, "coveredSeconds": 6,
+      "metrics": {
+        "rpm": {"count": 4, "sum": 4000, "min": 0, "max": 2000},
+        "speedKph": {"count": 4, "sum": 72, "min": 0, "max": 36},
+        "coolantTempC": {"count": 3, "sum": 110, "min": 20, "max": 50},
+        "engineLoadPct": {"count": 2, "sum": 30, "min": 10, "max": 20},
+        "mafGps": {"count": 0, "sum": null, "min": null, "max": null}
+      }
+    }
+  },
+  "commutes": [
+    {
+      "name": "normal", "phaseSeconds": [10, 30, 120, 300, 30, 10],
+      "inputFile": "trip-normal-input.json", "inputSampleCount": 251,
+      "expected": {
+        "startOffsetSeconds": 10, "endOffsetSeconds": 490, "confirmedOffsetSeconds": 492,
+        "completionReason": "ENGINE_OFF", "sampleCount": 241, "durationSeconds": 480,
+        "speedAreaKphSeconds": 23400, "coveredSeconds": 480,
+        "metrics": {
+          "rpm": {"count": 241, "sum": 506050, "min": 0, "max": 2925},
+          "speedKph": {"count": 241, "sum": 11700, "min": 0, "max": 85},
+          "coolantTempC": {"count": 241, "sum": 13780, "min": 20, "max": 90},
+          "engineLoadPct": {"count": 240, "sum": 9602.5, "min": 20, "max": 54},
+          "mafGps": {"count": 0, "sum": null, "min": null, "max": null}
+        }
+      },
+      "derivation": {
+        "rpmPhaseSums": [15550, 103500, 375000, 12000, 0],
+        "speedPhaseSums": [0, 1500, 10200, 0, 0],
+        "loadPhaseSums": [360, 1862.5, 7080, 300],
+        "coolantSum": "226*(20+90)/2 + 15*90 = 13780; symmetric 0.001 rounding errors cancel",
+        "distanceArea": "50*120/2 + 85*(300-60) = 23400; /3600 = 6.5 km"
+      }
+    },
+    {
+      "name": "short", "phaseSeconds": [4, 8, 16, 20, 8, 4],
+      "inputFile": "trip-short-input.json", "inputSampleCount": 31,
+      "expected": {
+        "startOffsetSeconds": 4, "endOffsetSeconds": 56, "confirmedOffsetSeconds": 58,
+        "completionReason": "ENGINE_OFF", "sampleCount": 27, "durationSeconds": 52,
+        "speedAreaKphSeconds": 1760, "coveredSeconds": 52,
+        "metrics": {
+          "rpm": {"count": 27, "sum": 46275, "min": 0, "max": 2925},
+          "speedKph": {"count": 27, "sum": 880, "min": 0, "max": 85},
+          "coolantTempC": {"count": 27, "sum": 1625, "min": 20, "max": 90},
+          "engineLoadPct": {"count": 26, "sum": 885.5, "min": 20, "max": 54},
+          "mafGps": {"count": 0, "sum": null, "min": null, "max": null}
+        }
+      },
+      "derivation": {
+        "rpmPhaseSums": [4275, 13800, 25000, 3200, 0],
+        "speedPhaseSums": [0, 200, 680, 0, 0],
+        "loadPhaseSums": [96, 237.5, 472, 80],
+        "coolantSum": "23*(20+90)/2 + 4*90 = 1625; symmetric 0.001 rounding errors cancel",
+        "distanceArea": "50*16/2 + 85*(20-4) = 1760; /3600 = 22/45 km"
+      }
+    }
+  ]
+}

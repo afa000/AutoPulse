@@ -1,0 +1,14 @@
+{
+  "description": "Hand-authored checkpoint-3 expectations; dates in the selected service timezone, decimal distances in the profile's native unit.",
+  "oilCases": [
+    {"name":"normal-inclusive-mileage","schedule":"NORMAL","unit":"MI","serviceDate":"2026-01-31","serviceOdometer":"10000","asOf":"2026-02-01","current":"18000","state":"DUE","dueDate":"2027-01-31"},
+    {"name":"normal-below-both","schedule":"NORMAL","unit":"MI","serviceDate":"2026-01-31","serviceOdometer":"10000","asOf":"2026-02-01","current":"17999.999","state":"NOT_DUE","dueDate":"2027-01-31"},
+    {"name":"severe-inclusive-mileage","schedule":"SEVERE","unit":"MI","serviceDate":"2026-01-31","serviceOdometer":"10000","asOf":"2026-02-01","current":"15000","state":"DUE","dueDate":"2026-07-31"},
+    {"name":"leap-year-clamp","schedule":"NORMAL","unit":"KM","serviceDate":"2024-02-29","serviceOdometer":"10000","asOf":"2025-02-28","current":null,"state":"DUE","dueDate":"2025-02-28"},
+    {"name":"severe-month-end","schedule":"SEVERE","unit":"KM","serviceDate":"2025-08-31","serviceOdometer":"10000","asOf":"2026-02-28","current":"10000","state":"DUE","dueDate":"2026-02-28"},
+    {"name":"unknown-odometer","schedule":"NORMAL","unit":"KM","serviceDate":"2026-01-31","serviceOdometer":"10000","asOf":"2026-02-01","current":null,"state":"UNKNOWN","dueDate":"2027-01-31"},
+    {"name":"kilometre-native-boundary","schedule":"NORMAL","unit":"KM","serviceDate":"2026-01-31","serviceOdometer":"10000","asOf":"2026-02-01","current":"23000","state":"DUE","dueDate":"2027-01-31"}
+  ],
+  "lifecycle": {"diagnosticAdvisories":3,"thermalAdvisories":1,"thermalOpenOffsetSeconds":32,"thermalUnknownOffsetSeconds":34,"thermalRecoveryOffsetSeconds":70},
+  "implementationStatus":"EXPECTATIONS WRITTEN BEFORE CHECKPOINT-3 IMPLEMENTATION"
+}

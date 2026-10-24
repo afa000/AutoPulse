@@ -1,0 +1,8 @@
+event: empty
+data: {"vehicleId":"empty-vehicle"}
+
+: keepalive
+
+event: telemetry
+data: {"reading":{"deviceId":"sim-device-001","vehicleId":"venue-2021","bootId":"123e4567-e89b-12d3-a456-426614174000","recordedAt":"2026-10-20T12:00:00Z","sequenceNumber":0,"source":"SIMULATED","rpm":0,"speedKph":0,"coolantTempC":20,"engineLoadPct":null,"milOn":false},"receivedAt":"2026-10-20T12:00:01Z"}
+

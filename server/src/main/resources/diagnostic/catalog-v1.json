@@ -1,0 +1,19 @@
+{
+  "version": "autopulse-generic-v1",
+  "license": "MIT (original AutoPulse summaries only; referenced documents retain their own rights)",
+  "scope": "Generic code meaning only; not Hyundai-specific thresholds, a repair procedure or proof of a failed component.",
+  "entries": [
+    {
+      "code": "P0117",
+      "description": "Observed low electrical input in the engine-coolant sensing circuit. This identifies an investigation area, not a failed-part diagnosis.",
+      "sourceUrl": "https://static.nhtsa.gov/odi/tsbs/2012/MC-10243910-9999.pdf#page=191",
+      "sourceTitle": "Audi A6/S6 Quick Reference Specification Book, December 2012, printed p179; NHTSA-hosted primary manufacturer document"
+    },
+    {
+      "code": "P0300",
+      "description": "Observed misfiring involving multiple cylinders. The code does not establish a cause or authorize a repair.",
+      "sourceUrl": "https://static.nhtsa.gov/odi/tsbs/2020/MC-10187651-9999.pdf#page=1",
+      "sourceTitle": "FCA US LLC STAR case S2018000014, release December 12, 2020, p1; NHTSA-hosted primary manufacturer document"
+    }
+  ]
+}
