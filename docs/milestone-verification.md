@@ -790,3 +790,48 @@ local implementation/verification/documentation is complete; owner review and an
 commit/push/new hosted CI remain pending separate authorization. No PR/merge/deploy
 or workflow rerun implied. This milestone does not supply durable edge buffering,
 read-only physical hardware validation, production authentication or deployment.
+
+## 2026-10-24 - Diagnostic retry-ordering regression fix
+
+The independent review reproduced accepted positive snapshots being overtaken
+during retry backoff: the later complete absence advanced the watermark, and the
+retry became HISTORICAL_ONLY, omitting three diagnostic event cycles. The fix
+selects the earliest pending snapshot before checking eligibility, pauses a
+vehicle with any REVIEW work, and excludes blocked vehicle heads from global
+polling. Failure reporting now follows the same vehicle/work lock order as
+processing. See ADR 0030. No schema/default/evidence changes or historical repair.
+
+Five permanent `DiagnosticRecoveryTests` methods were run first on the original
+code: five expected assertion failures, zero errors/skips. After the fix, all five
+pass, including failures after each committed category boundary, restart/replay,
+downstream advisory transitions, backoff/REVIEW isolation, native boot/sequence
+ties and original-receipt eligibility. Fresh contexts isolate global poll tests.
+The focused diagnostic recovery/API/startup and maintenance API run passed 37
+tests, zero failures/errors/skips. Ignored red/green evidence logs are
+`server/target/diagnostic-recovery-red.log` and `diagnostic-recovery-green.log`.
+
+Full offline Java/PostgreSQL verification subsequently passed 463 tests across
+34 suites, zero failures/errors/skips, finishing at 00:07:32 America/New_York.
+Both actual diagnostic and maintenance HTTP/OpenAPI gates passed. Evidence:
+`server/target/diagnostic-fix-regression.log` and fresh Surefire reports. Commands
+from `server/` were `./mvnw.cmd --offline --batch-mode test`, followed by the
+existing `verify_diagnostic_http.py` and `verify_maintenance_http.py` bridges using
+the existing Python 3.12 environment.
+
+Python 3.12.10 and 3.14.3 each passed all 176 tests again (10.40s and 11.14s).
+Frontend typecheck, lint, 104 tests and production build passed using the existing
+process-local npm 11 selection; no global tools or lockfiles changed. Verification
+uses disposable infrastructure only. No owner database migration/processing,
+commit, push, PR, merge, deployment or new hosted CI is implied by these results.
+
+The explicit `CareBrowserDemo,CareMilestoneDemo` offline invocation also passed
+both Java methods with zero failures/errors/skips at 00:08:23 America/New_York.
+Its three real browser scenarios passed (care interface, actual Python baseline,
+and actual Python lifecycle/JVM restart). Evidence remains in ignored
+`server/target/diagnostic-fix-browser.log` and the three care browser logs. Markers
+confirm 13 snapshots, 39 applications, five cycles with counts 3/2/3/2/2,
+15 diagnostic and 37 telemetry replay duplicates, unchanged original receipts,
+matching-only oil completion, vehicle isolation, simulation labels and keyboard/
+desktop/narrow accessibility checks. These end-to-end fixtures complement the
+new injected-failure tests; they do not replace them. All disposable containers
+were cleaned up, saved switches remain unchanged and private files remain excluded.

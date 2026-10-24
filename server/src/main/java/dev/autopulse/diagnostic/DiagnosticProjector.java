@@ -23,7 +23,18 @@ public class DiagnosticProjector {
         tx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
     public Page poll(Instant asOf) {
-        var vehicles=jdbc.queryForList("select vehicle_id from diagnostic_work where status='PENDING' and next_attempt_at<=? order by next_attempt_at,vehicle_id,snapshot_id limit 1",UUID.class,stamp(asOf));
+        // Only eligible vehicle heads may compete for a tick; blocked vehicles must not starve others.
+        var vehicles=tx.execute(t->jdbc.queryForList("""
+            select w.vehicle_id from diagnostic_work w join diagnostic_snapshot s on s.id=w.snapshot_id
+            where w.status='PENDING' and w.next_attempt_at<=? and s.captured_at<=?
+              and not exists(select 1 from diagnostic_work r where r.vehicle_id=w.vehicle_id and r.status='REVIEW')
+              and not exists(
+                select 1 from diagnostic_work p join diagnostic_snapshot earlier on earlier.id=p.snapshot_id
+                where p.vehicle_id=w.vehicle_id and p.status='PENDING'
+                  and (earlier.captured_at,earlier.boot_id,earlier.sequence_number,earlier.device_id,earlier.id)
+                    < (s.captured_at,s.boot_id,s.sequence_number,s.device_id,s.id))
+            order by w.next_attempt_at,w.vehicle_id,w.snapshot_id limit 1
+            """,UUID.class,stamp(asOf),stamp(asOf)));
         return vehicles.isEmpty()?new Page("IDLE",null,0):processPage(vehicles.getFirst(),asOf);
     }
     public Page processPage(UUID vehicle,Instant asOf) {
@@ -34,6 +45,8 @@ public class DiagnosticProjector {
             if(claimed[0]==null) throw failure;
             // CAS prevents a delayed failure report from overwriting a newer successful page.
             return tx.execute(t->{
+                // Use the same lock order as page processing, including when reporting a rolled-back attempt.
+                jdbc.queryForObject("select vehicle_id from diagnostic_vehicle where vehicle_id=? for update",UUID.class,vehicle);
                 int changed=jdbc.update("""
                     update diagnostic_work set failures=failures+1,
                       status=case when failures>=2 then 'REVIEW' else 'PENDING' end,
@@ -48,13 +61,19 @@ public class DiagnosticProjector {
     private Page page(UUID vehicle,Instant asOf,UUID[] claimed,int[] part) {
         var lock=jdbc.queryForList("select vehicle_id from diagnostic_vehicle where vehicle_id=? for update skip locked",vehicle);
         if(lock.isEmpty()) return new Page("IDLE_OR_BUSY",null,0);
+        if(Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from diagnostic_work where vehicle_id=? and status='REVIEW')",Boolean.class,vehicle)))
+            return new Page("REVIEW",null,0);
+        // Select the head before testing eligibility. Otherwise later evidence can advance the
+        // watermark during backoff and turn the retry's accepted positives into historical-only data.
         var queue=jdbc.queryForList("""
-            select s.*,w.next_part from diagnostic_work w join diagnostic_snapshot s on s.id=w.snapshot_id
-            where w.vehicle_id=? and w.status='PENDING' and w.next_attempt_at<=? and s.captured_at<=?
+            select s.*,w.next_part,w.next_attempt_at from diagnostic_work w join diagnostic_snapshot s on s.id=w.snapshot_id
+            where w.vehicle_id=? and w.status='PENDING'
             order by s.captured_at,s.boot_id,s.sequence_number,s.device_id,s.id limit 1
-            """,vehicle,stamp(asOf),stamp(asOf));
+            """,vehicle);
         if(queue.isEmpty()) return new Page("IDLE",null,0);
-        var work=queue.getFirst(); UUID snapshot=(UUID)work.get("id"); int index=((Number)work.get("next_part")).intValue();
+        var work=queue.getFirst();
+        if(time(work,"next_attempt_at").isAfter(asOf) || time(work,"captured_at").isAfter(asOf)) return new Page("IDLE",null,0);
+        UUID snapshot=(UUID)work.get("id"); int index=((Number)work.get("next_part")).intValue();
         claimed[0]=snapshot; part[0]=index;
         var payload=mapper.readTree(work.get("payload").toString()); var ecus=payload.get("ecus");
         if(index>=ecus.size()*3) throw new IllegalStateException("diagnostic work boundary invalid");

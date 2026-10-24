@@ -47,6 +47,18 @@ rolls back, then records a sanitized error and 60-second retry delay; three fail
 mark REVIEW. Operators must inspect the cause before an explicit controlled retry;
 there is no public retry/repair route or automatic forgiveness of review work.
 
+Recovery-ordering correction (2026-10-24): select the earliest PENDING snapshot
+for a vehicle before checking its retry/capture eligibility. An ineligible head pauses that
+vehicle rather than letting a newer snapshot advance the watermark. Any REVIEW
+item pauses the entire vehicle, including newly accepted older snapshots, until
+an explicitly authorized operator retry. The global poll considers only eligible
+vehicle heads and excludes REVIEW vehicles, allowing unrelated vehicles to
+continue. Failure reporting takes the same vehicle lock before its guarded work
+update. This prevents a transient failure from silently omitting already queued
+fault events; genuinely late-arriving historical evidence still follows the
+existing watermark policy. No applied migration or evidence is rewritten, and
+this change does not repair already processed HISTORICAL_ONLY applications.
+
 The opt-in Spring-managed poll processes one page per second after application
 readiness and stops on shutdown; no browser/new telemetry is required. Saved
 `autopulse.diagnostics.processing-enabled=false` remains off. No owner-data
