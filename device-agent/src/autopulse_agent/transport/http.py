@@ -6,6 +6,9 @@ from dataclasses import dataclass
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
+from uuid import UUID
+
+from simplejson import loads as strict_loads
 
 from .. import json_codec as json
 
@@ -41,6 +44,12 @@ class HttpBatchClient:
         body = json.dumps({"readings": readings}).encode("utf-8")
         if len(body) > MAX_BYTES:
             raise PermanentDeliveryError("batch exceeds 262144 bytes")
+        return self.send_encoded(body)
+
+    def send_encoded(self, body):
+        """Send an already bounded envelope without rewriting stored number tokens."""
+        if type(body) is not bytes or not 1 <= len(body) <= MAX_BYTES:
+            raise PermanentDeliveryError("batch exceeds 262144 bytes or is empty")
         request = Request(self.url, data=body, headers={"Content-Type": "application/json"}, method="POST")
         try:
             with self.opener(request, timeout=self.timeout) as response:
@@ -48,7 +57,14 @@ class HttpBatchClient:
                 if len(raw) > MAX_BYTES:
                     raise TransientDeliveryError("acknowledgment exceeds response size limit")
                 try:
-                    return json.loads(raw)
+                    def unique(pairs):
+                        result = {}
+                        for key, value in pairs:
+                            if key in result:
+                                raise ValueError("duplicate acknowledgment key")
+                            result[key] = value
+                        return result
+                    return strict_loads(raw.decode("utf-8"), use_decimal=True, allow_nan=False, object_pairs_hook=unique)
                 except (ValueError, UnicodeError) as exc:
                     raise TransientDeliveryError("invalid JSON acknowledgment") from exc
         except HTTPError as exc:
@@ -90,6 +106,37 @@ def acknowledgment(response, item_count):
     if any(type(response.get(name)) is not int or response[name] != count for name, count in counts.items()):
         raise TransientDeliveryError("acknowledgment counts do not match results")
     return DeliverySummary(**counts)
+
+
+def indexed_acknowledgment(response, item_count):
+    """Validate the complete receipt before exposing any row settlement."""
+    summary = acknowledgment(response, item_count)
+    try:
+        correlation = response["correlationId"]
+        if type(correlation) is not str or str(UUID(correlation)) != correlation.lower():
+            raise ValueError("correlationId")
+        ordered = [None] * item_count
+        codes = {"INVALID_READING", "UNKNOWN_DEVICE", "UNKNOWN_VEHICLE", "DEVICE_VEHICLE_MISMATCH", "IDENTITY_CONFLICT"}
+        for item in response["results"]:
+            status = item["status"]
+            reason = None
+            if status == "rejected":
+                errors = item["errors"]
+                if item["code"] not in codes or not 1 <= len(errors) <= 32:
+                    raise ValueError("rejection details")
+                parts = []
+                for error in errors:
+                    if (type(error) is not dict or type(error.get("field")) is not str or
+                            type(error.get("message")) is not str or not error["field"] or not error["message"]):
+                        raise ValueError("rejection field error")
+                    parts.append(error["field"] + ": " + error["message"])
+                reason = item["code"] + ": " + "; ".join(parts)
+                if len(reason.encode("utf-8")) > 1024:
+                    raise ValueError("rejection details too large")
+            ordered[item["index"]] = (status, reason)
+        return summary, ordered
+    except (KeyError, ValueError, TypeError, AttributeError) as error:
+        raise TransientDeliveryError("invalid indexed acknowledgment") from error
 
 
 class BatchSender:

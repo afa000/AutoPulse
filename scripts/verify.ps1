@@ -40,6 +40,9 @@ try {
             if ($LASTEXITCODE -ne 0) { throw 'Actual diagnostic HTTP contract verification failed.' }
             & $Python ../scripts/verify_maintenance_http.py
             if ($LASTEXITCODE -ne 0) { throw 'Actual maintenance HTTP contract verification failed.' }
+            if ($onWindows) { & .\mvnw.cmd --batch-mode test '-Dtest=OutboxTelemetryRecoveryDemo' "-Dautopulse.python=$Python" }
+            else { & bash ./mvnw --batch-mode test '-Dtest=OutboxTelemetryRecoveryDemo' "-Dautopulse.python=$Python" }
+            if ($LASTEXITCODE -ne 0) { throw 'Isolated device outbox verification failed.' }
             if ($Browser) {
                 if ($onWindows) { & .\mvnw.cmd --batch-mode test '-Dtest=DashboardBrowserDemo,TripMilestoneDemo,NumericAnalyticsDemo,CareBrowserDemo,CareMilestoneDemo' "-Dautopulse.python=$Python" }
                 else { & bash ./mvnw --batch-mode test '-Dtest=DashboardBrowserDemo,TripMilestoneDemo,NumericAnalyticsDemo,CareBrowserDemo,CareMilestoneDemo' "-Dautopulse.python=$Python" }

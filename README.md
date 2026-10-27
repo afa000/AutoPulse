@@ -6,7 +6,7 @@
 
 AutoPulse connects a Python vehicle simulator to a Spring Boot API, PostgreSQL, and a React/TypeScript dashboard. It handles duplicate delivery, delayed observations, missing sensors, and backend recovery without presenting incomplete data as vehicle health.
 
-**Status:** working local software prototype. Live telemetry, trips/history, diagnostics, and manual maintenance workflows are implemented and tested with simulated data. Physical OBD-II integration, durable edge buffering, authentication, and deployment remain planned.
+**Status:** working local software prototype. Live telemetry, trips/history, diagnostics, manual maintenance workflows, and an opt-in durable device outbox are implemented with simulated data. Physical OBD-II integration, authentication, and deployment remain planned.
 
 ## Short demo
 
@@ -23,11 +23,12 @@ This captioned screen tour uses real captures from isolated browser demos, not a
 - **Diagnostic observations:** durable snapshots, scoped code cycles and recurrence, complete/partial/unsupported outcomes, and a small provenance-backed generic-code catalog with an unknown-definition fallback.
 - **Maintenance context:** manual service/odometer history, revisioned corrections, explicitly selected schedules, versioned evidence-backed advisories, and retry-safe form submissions.
 - **Reliability:** precise decimal wire data, idempotent ingestion and original receipts, durable backend work, restart/replay tests, and diagnostic retry ordering that prevents failed work being skipped.
+- **Offline collection:** a bounded SQLite outbox commits simulated telemetry and diagnostics before delivery, retries unchanged evidence after outages and process restarts, and pauses collection instead of evicting pending items. See the [outbox operations guide](docs/device-outbox-operations.md) for limits and recovery.
 
 ## Architecture
 
 ```text
-Python simulator / device-agent contracts
+Python simulator / device-agent + optional SQLite outbox
                |
                | bounded HTTP/JSON batches and diagnostic snapshots
                v
@@ -70,16 +71,16 @@ Docker must be running. This demo creates its own PostgreSQL container and tempo
 
 ## Verification
 
-GitHub Actions tests Python 3.12 and 3.14, the backend against real disposable PostgreSQL, and the frontend plus integrated Chromium demos.
+GitHub Actions is configured to test Python 3.12 and 3.14, the backend against real disposable PostgreSQL, the device outbox outage scenario, and the frontend plus integrated Chromium demos. Hosted results apply to the commit tested by the linked workflow.
 
-Latest local verification on October 24, 2026:
+Local verification on October 27, 2026:
 
 | Check | Result |
 | --- | --- |
-| Python 3.12 and 3.14 | 176 tests on each |
+| Python 3.12 and 3.14 | 233 tests on each, including capacity recovery regressions |
 | Java/PostgreSQL | 463 tests, including five diagnostic recovery regressions |
 | Frontend | 104 tests; typecheck, lint, and production build |
-| Care browser demonstrations | Three scenarios through the real API/database/UI |
+| Device outbox | Four isolated Java/Python/PostgreSQL integration tests |
 
 Other integrated checks cover large/signed analytical totals, trip crash/replay/retention, and live reconnect behavior. The [verification record](docs/milestone-verification.md) contains commands, historical runs, and coverage boundaries. Counts are a snapshot, not a performance or production-readiness claim; the linked workflow is the source for hosted results.
 
@@ -97,24 +98,25 @@ Run all local gates after installing dependencies:
 - **Local/private application:** vehicle-scoped routes are not authentication. Do not expose the development servers to the internet.
 - **Conservative defaults:** trip, diagnostic, and maintenance workers are opt-in. Retention is off and dry-run is on; no automatic diagnostic/service deletion exists. Backend startup may apply migrations to its configured database.
 - **Not compact archival storage:** protected evidence and full canonical replay data remain. Raw cleanup is explicit, bounded, and guarded.
+- **Outbox boundary:** process-restart tests cover observations committed to SQLite. Reads interrupted before commit, faulty media, and arbitrary power loss are outside that guarantee; an ingestion receipt is not proof that downstream processing completed.
 - **Hardware is future work:** the intended Raspberry Pi + USB OBD-II path for a 2021 Hyundai Venue has not been tested on the vehicle.
 
 ## Repository guide
 
 | Path | Purpose |
 | --- | --- |
-| `device-agent/` | Python simulator, source contracts, codecs, HTTP transport, capture/replay |
+| `device-agent/` | Python simulator, source contracts, codecs, HTTP transport, capture/replay and SQLite outbox |
 | `server/` | Spring Boot API, persistence, trip/diagnostic/maintenance processing, migrations |
 | `web/` | React dashboard and browser tests |
 | `contracts/` | OpenAPI schemas and shared valid/invalid fixtures |
 | `docs/adr/` | Architecture decisions and evidence/precision policies |
 | `scripts/` | Verification and isolated demonstration helpers |
 
-[Local setup](docs/local-development.md) · [API contract](contracts/openapi.yaml) · [Trip/retention operations](docs/trip-processing-operations.md) · [Maintenance operations](docs/maintenance-operations.md) · [Architecture decisions](docs/adr)
+[Local setup](docs/local-development.md) · [Device outbox operations](docs/device-outbox-operations.md) · [API contract](contracts/openapi.yaml) · [Trip/retention operations](docs/trip-processing-operations.md) · [Maintenance operations](docs/maintenance-operations.md) · [Architecture decisions](docs/adr)
 
 ## Next milestones
 
-Durable device buffering/reconnect recovery; read-only physical adapter validation; authentication/authorization and production deployment safeguards. These are not included in the current prototype.
+Read-only physical adapter validation; authentication/authorization and production deployment safeguards. These are not included in the current prototype.
 
 ## License
 

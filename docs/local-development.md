@@ -47,6 +47,7 @@ Push-Location server
 ./mvnw.cmd test "-Dtest=CareMilestoneDemo" "-Dautopulse.python=../device-agent/.venv/Scripts/python.exe"
 ./mvnw.cmd test "-Dtest=TripMilestoneDemo" "-Dautopulse.python=../device-agent/.venv/Scripts/python.exe"
 ./mvnw.cmd test "-Dtest=DashboardBrowserDemo" "-Dautopulse.python=../device-agent/.venv/Scripts/python.exe"
+./mvnw.cmd test "-Dtest=OutboxTelemetryRecoveryDemo" "-Dautopulse.python=../device-agent/.venv/Scripts/python.exe"
 Pop-Location
 ```
 
@@ -55,6 +56,8 @@ or an absolute path. Care exercises actual diagnostic delivery, committed-work
 crash recovery, fault cycles, uncertainty, manual service retries and matching-only
 completion. Trip covers boundaries, replay, charts and disposable retention.
 Dashboard covers persisted SSE updates, reconnect, freshness and isolation.
+The outbox demonstration exercises simulated offline collection, restart,
+lost-response replay, local capacity pause and unchanged historical diagnostics.
 
 Logs are under ignored `server/target/`; screenshots/traces are under ignored
 `web/test-results/` and `web/playwright-report/`. Tests clean up their own
@@ -134,6 +137,11 @@ pacing. Keep them aligned for a live demonstration. Accelerating delivery from
 the current start can create future samples and a legitimate clock warning.
 Heartbeats do not renew measurement age. Synthetic values are not verified
 Hyundai characteristics. The ordinary CLI sends telemetry, not physical diagnostics.
+
+The optional device-local outbox supports separate collection and recovery
+modes for simulated telemetry and diagnostics. Follow the [outbox operations
+guide](device-outbox-operations.md) for a local path, queue status, blocked work,
+limits and the exact tested durability boundary.
 
 ### Processing and safety defaults
 
