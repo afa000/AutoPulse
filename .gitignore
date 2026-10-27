@@ -4,6 +4,8 @@
 /.env
 /device-agent/.venv/
 /device-agent/.venv312/
+# Optional local outbox files, rollback journals and ownership locks.
+/device-agent/runtime/
 __pycache__/
 .pytest_cache/
 *.egg-info/

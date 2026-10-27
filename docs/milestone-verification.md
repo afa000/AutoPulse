@@ -835,3 +835,87 @@ matching-only oil completion, vehicle isolation, simulation labels and keyboard/
 desktop/narrow accessibility checks. These end-to-end fixtures complement the
 new injected-failure tests; they do not replace them. All disposable containers
 were cleaned up, saved switches remain unchanged and private files remain excluded.
+
+## 2026-10-27 - Device outbox offline recovery milestone
+
+The opt-in SQLite outbox commits simulated telemetry and diagnostic observations
+before delivery, preserves their original identities and exact payloads, and
+performs bounded at-least-once delivery. It pauses collection at configured
+capacity instead of evicting pending evidence. The operational details, review
+commands, storage assumptions and untested power-loss boundaries are in
+[device outbox operations](device-outbox-operations.md) and ADR 0032.
+
+The explicit `OutboxTelemetryRecoveryDemo` passed four tests against an isolated
+Python subprocess, Java HTTP server and disposable PostgreSQL 17. The combined
+outage fixture prepared expected content before collection, sent a four-item
+online baseline, collected ten observations while a controlled path returned
+503, terminated the collector, collected ten more with a new boot and restored
+connectivity. A committed response was discarded; the unchanged retry received a
+duplicate acknowledgment. All 20 buffered payloads and four baseline payloads
+matched their manifest, with no extra rows for their boot identities. The queue
+emptied in order. Separate cases checked permanent conflict review and a tiny
+capacity pause without contaminating that result. The real latest endpoint kept
+its original measurement time and the diagnostic endpoint reported stale data;
+30 old diagnostic applications remained STALE_HISTORICAL, including two partial
+snapshots. A separate diagnostic lost-receipt test retained the original server
+snapshot ID and receipt time. The earlier before-send, post-commit and
+pre-settlement telemetry crash boundaries also passed. Evidence is in ignored
+`server/target/outbox-milestone-demo.log`.
+
+On Windows, Python 3.12.10 and 3.14.3 independently passed 228 tests each. The
+full offline Java/PostgreSQL suite passed 463 tests with no failures, errors or
+skips (`server/target/outbox-milestone-java.log`); actual diagnostic and
+maintenance HTTP results matched their OpenAPI schemas. Frontend typecheck,
+lint, all 104 tests and production build passed with Node 24.19.0 and the existing
+process-local npm 11.21.1. No owner database was used.
+
+The workflow is configured to run the isolated outbox gate with a five-minute
+step timeout and Python tests on both versions; local verification also invokes
+the gate. Configuration is not a hosted result: this change set has not been
+published, and the existing hosted badge belongs to an earlier commit.
+
+The five explicit integrated browser demonstrations also passed with zero
+failures/errors/skips: `DashboardBrowserDemo`, `TripMilestoneDemo`,
+`NumericAnalyticsDemo`, `CareBrowserDemo` and `CareMilestoneDemo`. They reused
+existing isolated browser scenarios and did not require a UI change. Evidence is
+in ignored `server/target/outbox-milestone-browsers.log` and the existing browser
+logs. All disposable containers had stopped at the final check.
+
+### Capacity recovery review fixes - October 27, 2026
+
+Five new regression cases failed on the reviewed implementation before the fix:
+an oversized reservation, oversized observations through both collection CLI
+modes, and control-reserve recovery through explicit discard or release followed
+by acknowledgment. The CLI cases timed out; both reserve cases remained paused
+after the queue emptied. The full capacity suite now passes all 19 cases.
+
+An encoded observation larger than the entire configured payload budget now
+records a logical-capacity pause and exits 2 in either collection mode. Pre-read
+upper-bound checks remain distinct from exact post-encoding reservations. An
+uncommitted observation is never declared collected.
+
+Capacity checks now count active pages rather than allocated reusable pages.
+When control metadata has grown the file into its reserve, insertion can reuse
+freed pages without growing that allocated file further; a transactional
+active-page check rolls back an insert that would consume the reserve. Both
+review paths are tested across reopening the store, followed by a fresh enqueue
+and a direct-enqueue budget check. No automatic evidence deletion, compaction or
+schema migration is introduced by these fixes.
+
+Fresh full Python suites passed 233 tests on each of 3.12.10 and 3.14.3. Frontend
+typecheck/lint, all 104 tests and production build passed. Workflow YAML and the
+local verification script parse successfully. Results are local; hosted outcomes
+must be checked for the published commit rather than inferred from the badge.
+
+The final offline backend suite passed 463 tests with zero failures/errors/skips;
+both actual diagnostic and maintenance HTTP contract gates passed. The explicit
+outbox integration suite passed four methods with zero failures/errors/skips,
+finishing October 27 at 12:47:39 America/New_York. Its outage, diagnostic receipt,
+mixed-result and three telemetry crash boundaries remain covered. Fresh evidence
+is in ignored `server/target/outbox-final-backend.log`,
+`outbox-final-diagnostic-http.log`, `outbox-final-maintenance-http.log` and
+`outbox-final-demo.log`. The first wider attempt encountered a stopped Docker
+engine and was not counted as successful; the recorded pass followed starting
+Docker and a fresh complete run against disposable databases. Existing browser
+demos were not rerun locally for this fix; their prior milestone results above
+remain historical, and the workflow retains all five browser gates.
